@@ -1,0 +1,6 @@
+{
+  "name": "prk-navigation",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./PrkNavigation.js"
+}

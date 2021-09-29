@@ -1,0 +1,152 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "label": "",
+        "tim_lmt": null,
+        "shp_ln_": null,
+        "spc_cnt": 3,
+        "prk_ctg": "CVLZ",
+        "blckfc_": "LZ.008",
+        "cv_cpct": null,
+        "blck_id": "bellevue",
+        "cvlz_id": "LZ.008"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-122.196398735241, 47.6208368286068],
+          [-122.196393370823, 47.6209290314001]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "label": "",
+        "tim_lmt": null,
+        "shp_ln_": null,
+        "spc_cnt": 3,
+        "prk_ctg": "CVLZ",
+        "blckfc_": "LZ.006",
+        "cv_cpct": null,
+        "blck_id": "bellevue",
+        "cvlz_id": "LZ.006"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-122.19625692055, 47.6199046316942],
+          [-122.196256249998, 47.6198205628007]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "label": "",
+        "tim_lmt": null,
+        "shp_ln_": null,
+        "spc_cnt": 4,
+        "prk_ctg": "CVLZ",
+        "blckfc_": "LZ.001",
+        "cv_cpct": null,
+        "blck_id": "bellevue",
+        "cvlz_id": "LZ.001"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-122.198814015389, 47.614407134128],
+          [-122.19881133318, 47.6142918662339]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "label": "",
+        "tim_lmt": null,
+        "shp_ln_": null,
+        "spc_cnt": 4,
+        "prk_ctg": "CVLZ",
+        "blckfc_": "LZ.003",
+        "cv_cpct": null,
+        "blck_id": "bellevue",
+        "cvlz_id": "LZ.003"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-122.200294930162, 47.6134006104918],
+          [-122.200302976789, 47.6136379988461]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "label": "",
+        "tim_lmt": null,
+        "shp_ln_": null,
+        "spc_cnt": 4,
+        "prk_ctg": "CVLZ",
+        "blckfc_": "LZ.004",
+        "cv_cpct": null,
+        "blck_id": "bellevue",
+        "cvlz_id": "LZ.004"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-122.194477937187, 47.6136789956128],
+          [-122.194720677103, 47.6136803517231]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "label": "",
+        "tim_lmt": null,
+        "shp_ln_": null,
+        "spc_cnt": 4,
+        "prk_ctg": "CVLZ",
+        "blckfc_": "LZ.005",
+        "cv_cpct": null,
+        "blck_id": "bellevue",
+        "cvlz_id": "LZ.005"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-122.202919265834, 47.6101222975663],
+          [-122.202746933905, 47.6101218454988]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "label": "",
+        "tim_lmt": null,
+        "shp_ln_": null,
+        "spc_cnt": 3,
+        "prk_ctg": "CVLZ",
+        "blckfc_": "LZ.002",
+        "cv_cpct": null,
+        "blck_id": "bellevue",
+        "cvlz_id": "LZ.002"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-122.204119865892, 47.6110099007818],
+          [-122.204121206996, 47.611103929141]
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "prk-footer",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./PrkFooter.js"
+}

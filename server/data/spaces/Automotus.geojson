@@ -1,0 +1,39 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "label": "106th Ave. & 6th St. N",
+        "tim_lmt": null,
+        "shp_ln_": 54,
+        "prk_ctg": "CVLZ",
+        "blck_id": "bellevue",
+        "blckfc_": "b017173c-45d8-4a6e-9865-e2a72865f86d",
+        "cv_cpct": null,
+        "cvlz_id": "b017173c-45d8-4a6e-9865-e2a72865f86d"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[-122.19884, 47.61519], [-122.19884, 47.6153]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "label": "106th Ave. & 6th St. S",
+        "tim_lmt": null,
+        "shp_ln_": 90,
+        "prk_ctg": "CVLZ",
+        "blck_id": "bellevue",
+        "blckfc_": "0dcbcaaa-982c-4af5-b6db-34b919a9f22e",
+        "cv_cpct": null,
+        "cvlz_id": "0dcbcaaa-982c-4af5-b6db-34b919a9f22e"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[-122.19903, 47.61519], [-122.19903, 47.615]]
+      }
+    }
+  ]
+}
