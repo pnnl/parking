@@ -32,12 +32,12 @@ You will need to acquire a vector MBTile for the appropriate area (in this case 
 
 Download the Parking application source code from the PNNL Github repository. It's recommended to use the latest stable release from the master branch.
 
-- [Github](https://stash.pnnl.gov/projects/UWTECHINT/repos/parking/browse)
+- [Github](https://github.com/pnnl/parking)
 
 If Git is installed you can checkout directly from Github which will make updating to the latest release easier. You will only have to clone the repository once. After that you can pull to get the latest updates. Every time the application is updated you'll need to go through the build process.
 
 ```bash
-git clone https://stash.pnnl.gov/scm/uwtechint/parking.git
+git clone https://github.com/pnnl/parking.git
 ```
 
 ---
