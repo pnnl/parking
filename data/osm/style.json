@@ -1,0 +1,881 @@
+{
+  "version": 8,
+  "name": "Streets",
+  "sources": {
+    "openmapimages": {
+      "type": "raster",
+      "tiles": ["/api/osm/tile/{z}/{x}/{y}/image.png"],
+      "tileSize": 256,
+      "minzoom": 6,
+      "maxzoom": 24
+    },
+    "openmapworld": {
+      "type": "raster",
+      "tiles": ["/api/osm/tile/{z}/{x}/{y}/image.png?world=true"],
+      "tileSize": 256,
+      "minzoom": 0,
+      "maxzoom": 6
+    },
+    "spaces": {
+      "type": "geojson",
+      "data": "/api/spaces/geojson.json?dynamic=false"
+    },
+    "occupancies": {
+      "type": "geojson",
+      "data": "/api/occupancies/geojson.json?availability={a}&requirement={r}&vehicle={v}&deferred={d}&bounds={bounds}"
+    },
+    "clustered": {
+      "type": "geojson",
+      "data": "/api/spaces/geojson.json?dynamic=true&points=true",
+      "cluster": true,
+      "clusterMaxZoom": 12,
+      "clusterRadius": 40
+    }
+  },
+  "sprite": "",
+  "glyphs": "/api/font/{fontstack}/{range}.pbf",
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "layout": { "visibility": "visible" },
+      "paint": {
+        "background-color": {
+          "stops": [
+            [6, "rgba(252, 247, 229, 1)"],
+            [10, "rgba(252, 247, 229, 1)"],
+            [14, "rgba(246, 241, 229, 1)"],
+            [15, "rgba(246, 241, 229, 1)"]
+          ]
+        }
+      }
+    },
+    {
+      "id": "detail-image-layer",
+      "type": "raster",
+      "source": "openmapimages",
+      "minzoom": 6,
+      "maxzoom": 24,
+      "paint": {
+        "raster-opacity": 0.6
+      }
+    },
+    {
+      "id": "world-image-layer",
+      "type": "raster",
+      "source": "openmapworld",
+      "minzoom": 0,
+      "maxzoom": 6,
+      "paint": {
+        "raster-opacity": 0.6
+      }
+    },
+    {
+      "id": "clusters",
+      "type": "circle",
+      "source": "clustered",
+      "filter": ["has", "point_count"],
+      "maxzoom": 12,
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "circle-color": "rgba(186, 186, 186, 184)",
+        "circle-opacity": 0.7,
+        "circle-radius": ["interpolate", ["linear"], ["get", "point_count"], 0, 20, 1000, 40],
+        "circle-stroke-width": 1,
+        "circle-stroke-color": "rgba(186, 186, 186, 184)"
+      }
+    },
+    {
+      "id": "clusters-count",
+      "type": "symbol",
+      "source": "clustered",
+      "filter": ["has", "point_count"],
+      "maxzoom": 12,
+      "paint": {
+        "text-color": "rgba(0, 0, 0, 184)"
+      },
+      "layout": {
+        "text-field": "{point_count_abbreviated}",
+        "text-font": ["Roboto Regular", "Noto Sans Regular"],
+        "text-size": 16
+      }
+    },
+    {
+      "id": "clusters-point",
+      "type": "circle",
+      "source": "clustered",
+      "filter": ["!", ["has", "point_count"]],
+      "maxzoom": 12,
+      "paint": {
+        "circle-color": "rgba(186, 186, 186, 184)",
+        "circle-opacity": 0.7,
+        "circle-radius": 20,
+        "circle-stroke-width": 1,
+        "circle-stroke-color": "rgba(186, 186, 186, 184)"
+      }
+    },
+    {
+      "id": "spaces-heatmap",
+      "type": "heatmap",
+      "source": "spaces",
+      "minzoom": 12,
+      "maxzoom": 14,
+      "layout": {
+        "visibility": "none"
+      },
+      "paint": {
+        "heatmap-weight": {
+          "type": "identity",
+          "property": "point_count"
+        },
+        "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 0, 60, 22, 6],
+        "heatmap-color": [
+          "interpolate",
+          ["linear"],
+          ["heatmap-density"],
+          0.0,
+          "rgba(220, 220, 220, 0)",
+          1,
+          "rgba(186, 186, 186, 255)"
+        ],
+        "heatmap-opacity": 0.7
+      }
+    },
+    {
+      "id": "spaces",
+      "type": "line",
+      "source": "spaces",
+      "minzoom": 14,
+      "filter": ["!=", ["geometry-type"], "Polygon"],
+      "layout": {
+        "visibility": "visible",
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "rgba(186, 186, 186, 102)",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 16, 6, 24, 50],
+        "line-translate-anchor": "map",
+        "line-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.4],
+        "line-gap-width": 0
+      }
+    },
+    {
+      "id": "spaces-border",
+      "type": "line",
+      "source": "spaces",
+      "minzoom": 14,
+      "filter": ["==", ["geometry-type"], "LineString"],
+      "layout": {
+        "visibility": "visible",
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "rgb(186, 186, 186)",
+        "line-width": 2,
+        "line-translate-anchor": "map",
+        "line-opacity": 1,
+        "line-gap-width": ["interpolate", ["linear"], ["zoom"], 16, 6, 24, 50]
+      }
+    },
+    {
+      "id": "spaces-polygon",
+      "type": "fill",
+      "source": "spaces",
+      "minzoom": 14,
+      "filter": ["==", ["geometry-type"], "Polygon"],
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "fill-color": "rgb(186, 186, 186)",
+        "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.4]
+      }
+    },
+    {
+      "id": "spaces-stroke",
+      "type": "line",
+      "source": "spaces",
+      "minzoom": 14,
+      "filter": ["==", ["geometry-type"], "Polygon"],
+      "layout": {
+        "visibility": "visible",
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "rgb(186, 186, 186)",
+        "line-width": 2,
+        "line-opacity": 1
+      }
+    },
+    {
+      "id": "indeterminate-heatmap",
+      "type": "heatmap",
+      "source": "occupancies",
+      "minzoom": 12,
+      "maxzoom": 14,
+      "filter": ["==", ["get", "available"], null],
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "heatmap-weight": {
+          "type": "identity",
+          "property": "point_count"
+        },
+        "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 0, 60, 22, 6],
+        "heatmap-color": [
+          "interpolate",
+          ["linear"],
+          ["heatmap-density"],
+          0.0,
+          "rgba(220, 220, 220, 0)",
+          1,
+          "rgba(186, 186, 186, 255)"
+        ],
+        "heatmap-opacity": 0.7
+      }
+    },
+    {
+      "id": "indeterminate",
+      "type": "line",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": ["all", ["!=", ["geometry-type"], "Polygon"], ["==", ["get", "available"], null]],
+      "layout": {
+        "visibility": "visible",
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "rgba(186, 186, 186, 102)",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 16, 6, 24, 50],
+        "line-translate-anchor": "map",
+        "line-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.4],
+        "line-gap-width": 0
+      }
+    },
+    {
+      "id": "indeterminate-border",
+      "type": "line",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": ["all", ["!=", ["geometry-type"], "Polygon"], ["==", ["get", "available"], null]],
+      "layout": {
+        "visibility": "visible",
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "rgb(186, 186, 186)",
+        "line-width": 2,
+        "line-translate-anchor": "map",
+        "line-opacity": 1,
+        "line-gap-width": ["interpolate", ["linear"], ["zoom"], 16, 6, 24, 50]
+      }
+    },
+    {
+      "id": "indeterminate-polygon",
+      "type": "fill",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": ["all", ["==", ["geometry-type"], "Polygon"], ["==", ["get", "available"], null]],
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "fill-color": "rgb(186, 186, 186)",
+        "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.4]
+      }
+    },
+    {
+      "id": "indeterminate-stroke",
+      "type": "line",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": ["all", ["==", ["geometry-type"], "Polygon"], ["==", ["get", "available"], null]],
+      "layout": {
+        "visibility": "visible",
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "rgb(186, 186, 186)",
+        "line-width": 2,
+        "line-opacity": 1
+      }
+    },
+    {
+      "id": "indeterminate-point",
+      "type": "circle",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": ["all", ["==", ["geometry-type"], "Point"], ["==", ["get", "available"], null]],
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "circle-radius": 6,
+        "circle-color": "rgb(186, 186, 186)",
+        "circle-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.4],
+        "circle-stroke-color": "rgb(186, 186, 186)",
+        "circle-stroke-width": 2,
+        "circle-stroke-opacity": 1
+      }
+    },
+    {
+      "id": "occupied-heatmap",
+      "type": "heatmap",
+      "source": "occupancies",
+      "minzoom": 12,
+      "maxzoom": 14,
+      "filter": [
+        "any",
+        [
+          "all",
+          [">", ["get", "required"], ["get", "available"]],
+          ["<=", ["get", "required"], ["get", "shapeLength"]],
+          ["!=", ["get", "available"], null]
+        ],
+        [
+          "all",
+          [">", ["get", "required"], ["get", "available"]],
+          ["!=", ["get", "available"], ["get", "shapeLength"]],
+          ["!=", ["get", "available"], null]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "heatmap-weight": {
+          "type": "identity",
+          "property": "point_count"
+        },
+        "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 0, 60, 22, 6],
+        "heatmap-color": [
+          "interpolate",
+          ["linear"],
+          ["heatmap-density"],
+          0.0,
+          "rgba(220, 220, 220, 0)",
+          1,
+          "rgba(196, 74, 64, 255)"
+        ],
+        "heatmap-opacity": 0.7
+      }
+    },
+    {
+      "id": "occupied",
+      "type": "line",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": [
+        "all",
+        ["==", ["geometry-type"], "LineString"],
+        [
+          "any",
+          [
+            "all",
+            [">", ["get", "required"], ["get", "available"]],
+            ["<=", ["get", "required"], ["get", "shapeLength"]],
+            ["!=", ["get", "available"], null]
+          ],
+          [
+            "all",
+            [">", ["get", "required"], ["get", "available"]],
+            ["!=", ["get", "available"], ["get", "shapeLength"]],
+            ["!=", ["get", "available"], null]
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible",
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "rgba(196, 74, 64, 102)",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 16, 6, 24, 50],
+        "line-translate-anchor": "map",
+        "line-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.4],
+        "line-gap-width": 0
+      }
+    },
+    {
+      "id": "occupied-border",
+      "type": "line",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": [
+        "all",
+        ["==", ["geometry-type"], "LineString"],
+        [
+          "any",
+          [
+            "all",
+            [">", ["get", "required"], ["get", "available"]],
+            ["<=", ["get", "required"], ["get", "shapeLength"]],
+            ["!=", ["get", "available"], null]
+          ],
+          [
+            "all",
+            [">", ["get", "required"], ["get", "available"]],
+            ["!=", ["get", "available"], ["get", "shapeLength"]],
+            ["!=", ["get", "available"], null]
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible",
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "rgb(196, 74, 64)",
+        "line-width": 2,
+        "line-translate-anchor": "map",
+        "line-opacity": 1,
+        "line-gap-width": ["interpolate", ["linear"], ["zoom"], 16, 6, 24, 50]
+      }
+    },
+    {
+      "id": "occupied-polygon",
+      "type": "fill",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": [
+        "all",
+        ["==", ["geometry-type"], "Polygon"],
+        [
+          "any",
+          [
+            "all",
+            [">", ["get", "required"], ["get", "available"]],
+            ["<=", ["get", "required"], ["get", "shapeLength"]],
+            ["!=", ["get", "available"], null]
+          ],
+          [
+            "all",
+            [">", ["get", "required"], ["get", "available"]],
+            ["!=", ["get", "available"], ["get", "shapeLength"]],
+            ["!=", ["get", "available"], null]
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "fill-color": "rgb(196, 74, 64)",
+        "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.4]
+      }
+    },
+    {
+      "id": "occupied-stroke",
+      "type": "line",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": [
+        "all",
+        ["==", ["geometry-type"], "Polygon"],
+        [
+          "any",
+          [
+            "all",
+            [">", ["get", "required"], ["get", "available"]],
+            ["<=", ["get", "required"], ["get", "shapeLength"]],
+            ["!=", ["get", "available"], null]
+          ],
+          [
+            "all",
+            [">", ["get", "required"], ["get", "available"]],
+            ["!=", ["get", "available"], ["get", "shapeLength"]],
+            ["!=", ["get", "available"], null]
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible",
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "rgb(196, 74, 64)",
+        "line-width": 2,
+        "line-opacity": 1
+      }
+    },
+    {
+      "id": "occupied-point",
+      "type": "circle",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": [
+        "all",
+        ["==", ["geometry-type"], "Point"],
+        [
+          "any",
+          [
+            "all",
+            [">", ["get", "required"], ["get", "available"]],
+            ["<=", ["get", "required"], ["get", "shapeLength"]],
+            ["!=", ["get", "available"], null]
+          ],
+          [
+            "all",
+            [">", ["get", "required"], ["get", "available"]],
+            ["!=", ["get", "available"], ["get", "shapeLength"]],
+            ["!=", ["get", "available"], null]
+          ]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "circle-radius": 6,
+        "circle-color": "rgb(196, 74, 64)",
+        "circle-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.4],
+        "circle-stroke-color": "rgb(196, 74, 64)",
+        "circle-stroke-width": 2,
+        "circle-stroke-opacity": 1
+      }
+    },
+    {
+      "id": "unknown-heatmap",
+      "type": "heatmap",
+      "source": "occupancies",
+      "minzoom": 12,
+      "maxzoom": 14,
+      "filter": [
+        "all",
+        [">", ["get", "required"], ["get", "shapeLength"]],
+        ["==", ["get", "available"], ["get", "shapeLength"]],
+        ["!=", ["get", "available"], null]
+      ],
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "heatmap-weight": {
+          "type": "identity",
+          "property": "point_count"
+        },
+        "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 0, 60, 22, 6],
+        "heatmap-color": [
+          "interpolate",
+          ["linear"],
+          ["heatmap-density"],
+          0.0,
+          "rgba(220, 220, 220, 0)",
+          1,
+          "rgba(198, 183, 115, 255)"
+        ],
+        "heatmap-opacity": 0.7
+      }
+    },
+    {
+      "id": "unknown",
+      "type": "line",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": [
+        "all",
+        ["==", ["geometry-type"], "LineString"],
+        [
+          "all",
+          [">", ["get", "required"], ["get", "shapeLength"]],
+          ["==", ["get", "available"], ["get", "shapeLength"]],
+          ["!=", ["get", "available"], null]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible",
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "rgba(198, 183, 115, 102)",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 16, 6, 24, 50],
+        "line-translate-anchor": "map",
+        "line-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.4],
+        "line-gap-width": 0
+      }
+    },
+    {
+      "id": "unknown-border",
+      "type": "line",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": [
+        "all",
+        ["==", ["geometry-type"], "LineString"],
+        [
+          "all",
+          [">", ["get", "required"], ["get", "shapeLength"]],
+          ["==", ["get", "available"], ["get", "shapeLength"]],
+          ["!=", ["get", "available"], null]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible",
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "rgb(198, 183, 115)",
+        "line-width": 2,
+        "line-translate-anchor": "map",
+        "line-opacity": 1,
+        "line-gap-width": ["interpolate", ["linear"], ["zoom"], 16, 6, 24, 50]
+      }
+    },
+    {
+      "id": "unknown-polygon",
+      "type": "fill",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": [
+        "all",
+        ["==", ["geometry-type"], "Polygon"],
+        [
+          "all",
+          [">", ["get", "required"], ["get", "shapeLength"]],
+          ["==", ["get", "available"], ["get", "shapeLength"]],
+          ["!=", ["get", "available"], null]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "fill-color": "rgb(198, 183, 115)",
+        "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.4]
+      }
+    },
+    {
+      "id": "unknown-stroke",
+      "type": "line",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": [
+        "all",
+        ["==", ["geometry-type"], "Polygon"],
+        [
+          "all",
+          [">", ["get", "required"], ["get", "shapeLength"]],
+          ["==", ["get", "available"], ["get", "shapeLength"]],
+          ["!=", ["get", "available"], null]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible",
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "rgb(198, 183, 115)",
+        "line-width": 2,
+        "line-opacity": 1
+      }
+    },
+    {
+      "id": "unknown-point",
+      "type": "circle",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": [
+        "all",
+        ["==", ["geometry-type"], "Point"],
+        [
+          "all",
+          [">", ["get", "required"], ["get", "shapeLength"]],
+          ["==", ["get", "available"], ["get", "shapeLength"]],
+          ["!=", ["get", "available"], null]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "circle-radius": 6,
+        "circle-color": "rgb(198, 183, 115)",
+        "circle-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.4],
+        "circle-stroke-color": "rgb(198, 183, 115)",
+        "circle-stroke-width": 2,
+        "circle-stroke-opacity": 1
+      }
+    },
+    {
+      "id": "available-heatmap",
+      "type": "heatmap",
+      "source": "occupancies",
+      "minzoom": 12,
+      "maxzoom": 14,
+      "filter": [
+        "all",
+        ["<=", ["get", "required"], ["get", "shapeLength"]],
+        ["<=", ["get", "required"], ["get", "available"]],
+        ["!=", ["get", "available"], null]
+      ],
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "heatmap-weight": {
+          "type": "identity",
+          "property": "point_count"
+        },
+        "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 0, 60, 22, 6],
+        "heatmap-color": [
+          "interpolate",
+          ["linear"],
+          ["heatmap-density"],
+          0.0,
+          "rgba(220, 220, 220, 0)",
+          1,
+          "rgba(67, 186, 106, 255)"
+        ],
+        "heatmap-opacity": 0.7
+      }
+    },
+    {
+      "id": "available",
+      "type": "line",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": [
+        "all",
+        ["==", ["geometry-type"], "LineString"],
+        [
+          "all",
+          ["<=", ["get", "required"], ["get", "shapeLength"]],
+          ["<=", ["get", "required"], ["get", "available"]],
+          ["!=", ["get", "available"], null]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible",
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "rgba(67, 186, 106, 102)",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 16, 6, 24, 50],
+        "line-translate-anchor": "map",
+        "line-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.4],
+        "line-gap-width": 0
+      }
+    },
+    {
+      "id": "available-border",
+      "type": "line",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": [
+        "all",
+        ["==", ["geometry-type"], "LineString"],
+        [
+          "all",
+          ["<=", ["get", "required"], ["get", "shapeLength"]],
+          ["<=", ["get", "required"], ["get", "available"]],
+          ["!=", ["get", "available"], null]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible",
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "rgb(67, 186, 106)",
+        "line-width": 2,
+        "line-translate-anchor": "map",
+        "line-opacity": 1,
+        "line-gap-width": ["interpolate", ["linear"], ["zoom"], 16, 6, 24, 50]
+      }
+    },
+    {
+      "id": "available-polygon",
+      "type": "fill",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": [
+        "all",
+        ["==", ["geometry-type"], "Polygon"],
+        [
+          "all",
+          ["<=", ["get", "required"], ["get", "shapeLength"]],
+          ["<=", ["get", "required"], ["get", "available"]],
+          ["!=", ["get", "available"], null]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "fill-color": "rgb(67, 186, 106)",
+        "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.4]
+      }
+    },
+    {
+      "id": "available-stroke",
+      "type": "line",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": [
+        "all",
+        ["==", ["geometry-type"], "Polygon"],
+        [
+          "all",
+          ["<=", ["get", "required"], ["get", "shapeLength"]],
+          ["<=", ["get", "required"], ["get", "available"]],
+          ["!=", ["get", "available"], null]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible",
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "rgb(67, 186, 106)",
+        "line-width": 2,
+        "line-opacity": 1
+      }
+    },
+    {
+      "id": "available-point",
+      "type": "circle",
+      "source": "occupancies",
+      "minzoom": 14,
+      "filter": [
+        "all",
+        ["==", ["geometry-type"], "Point"],
+        [
+          "all",
+          ["<=", ["get", "required"], ["get", "shapeLength"]],
+          ["<=", ["get", "required"], ["get", "available"]],
+          ["!=", ["get", "available"], null]
+        ]
+      ],
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "circle-radius": 6,
+        "circle-color": "rgb(67, 186, 106)",
+        "circle-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.4],
+        "circle-stroke-color": "rgb(67, 186, 106)",
+        "circle-stroke-width": 2,
+        "circle-stroke-opacity": 1
+      }
+    }
+  ],
+  "id": "streets"
+}

@@ -1,0 +1,59 @@
+
+-- Example Postgres config file
+
+-- Connectivity
+ALTER SYSTEM SET max_connections = 100;
+ALTER SYSTEM SET superuser_reserved_connections = 3;
+ 
+-- Memory Settings
+ALTER SYSTEM SET shared_buffers = '16384 MB';
+ALTER SYSTEM SET work_mem = '128 MB';
+ALTER SYSTEM SET maintenance_work_mem = '620 MB';
+ALTER SYSTEM SET huge_pages = 'try';   -- NB! requires also activation of huge pages via kernel params, see here for more:
+                   -- https://www.postgresql.org/docs/current/static/kernel-resources.html--LINUX-HUGE-PAGES
+ALTER SYSTEM SET effective_cache_size = '45 GB';
+ALTER SYSTEM SET effective_io_concurrency = 100;   -- concurrent IO only really activated if OS supports posix_fadvise function
+ALTER SYSTEM SET random_page_cost = 1.25; -- speed of random disk access relative to sequential access (1.0)
+ 
+-- Monitoring
+ALTER SYSTEM SET shared_preload_libraries = 'pg_stat_statements';    -- per statement resource usage stats
+ALTER SYSTEM SET track_io_timing = 'on';        -- measure exact block IO times
+ALTER SYSTEM SET track_functions = 'pl';        -- track execution times of pl-language procedures if any
+ 
+-- Replication
+ALTER SYSTEM SET wal_level = 'replica';
+ALTER SYSTEM SET max_wal_senders = 0;
+ALTER SYSTEM SET synchronous_commit = 'off';
+ 
+-- Checkpointing: 
+ALTER SYSTEM SET checkpoint_timeout  = '15 min'; 
+ALTER SYSTEM SET checkpoint_completion_target = 0.9;
+ALTER SYSTEM SET max_wal_size = '10240 MB';
+ALTER SYSTEM SET min_wal_size = '5120 MB';
+ 
+-- WAL archiving
+ALTER SYSTEM SET archive_mode = 'on'; -- having it on enables activating P.I.T.R. at a later time without restart
+ALTER SYSTEM SET archive_command = '/bin/true';  -- not doing anything yet with WAL-s
+ 
+-- WAL writing
+ALTER SYSTEM SET wal_compression = 'on';
+ALTER SYSTEM SET wal_buffers = -1;    -- auto-tuned by Postgres till maximum of segment size (16MB by default)
+ALTER SYSTEM SET wal_keep_segments = 130;
+ 
+-- Background writer
+ALTER SYSTEM SET bgwriter_delay = '200ms';
+ALTER SYSTEM SET bgwriter_lru_maxpages = 100;
+ALTER SYSTEM SET bgwriter_lru_multiplier = 2.0;
+ALTER SYSTEM SET bgwriter_flush_after = 0;
+ 
+-- Parallel queries: 
+ALTER SYSTEM SET max_worker_processes = 32;
+ALTER SYSTEM SET max_parallel_workers_per_gather = 16;
+ALTER SYSTEM SET max_parallel_maintenance_workers = 16;
+ALTER SYSTEM SET max_parallel_workers = 32;
+ALTER SYSTEM SET parallel_leader_participation = 'on';
+ 
+-- Advanced features
+ALTER SYSTEM SET enable_partitionwise_join = 'on';
+ALTER SYSTEM SET enable_partitionwise_aggregate = 'on';
+ALTER SYSTEM SET jit = 'on';

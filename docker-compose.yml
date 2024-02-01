@@ -1,0 +1,297 @@
+version: "3.8"
+
+services:
+
+  # Proxy that can be configured for HTTP or HTTPS
+  dynacurb-proxy:
+    command:
+      - --log.level=DEBUG
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      # Uncomment when providing TLS certificates
+      # - --providers.file.directory=/etc/traefik/dynamic
+    container_name: dynacurb-proxy
+    image: traefik:v2.10
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Uncomment when providing TLS certificates
+      # - ./certs-traefik.yml:/etc/traefik/dynamic/certs-traefik.yml
+      # - ./certs/:/etc/certs/
+
+  # Simple service for checking proxy
+  dynacurb-whoami:
+    image: traefik/whoami
+    container_name: dynacurb-whoami
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.whoami.rule=Host(`whoami.localhost`)
+      - traefik.http.routers.whoami.entrypoints=web
+      - traefik.http.services.whoami.loadbalancer.server.port=80
+
+  # Application that hosts static files and API
+  dynacurb-app:
+    build:
+      context: ./app
+      dockerfile: ./Dockerfile
+    container_name: dynacurb-app
+    depends_on:
+      dynacurb-seed:
+        condition: service_completed_successfully
+      dynacurb-database:
+        condition: service_started
+    environment:
+      - PORT=3000
+      - CLUSTER_TYPE=app
+      - LOG_TRANSPORTS=${LOGGERS}
+      - LOG_FILE_PATH=./data/app.log
+      - DATABASE_HOST=dynacurb-database
+      - DATABASE_PORT=5432
+      - DATABASE_SCHEMA=public
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - OSM_HOST=dynacurb-osm
+      - OSM_PORT=80
+      - NEXTAUTH_URL=${AUTH_URL}
+      - NEXTAUTH_SECRET=${SECRET}
+      - NEXTAUTH_PROVIDERS=${AUTHENTICATION}
+      - FONTS_PATH=./data/fonts/
+      - EXPORT_PATH=./data/export/
+      - OSM_STYLE=./data/osm/style.json
+      - PROXY_PROTOCOL=${PROXY_PROTOCOL}
+      - PROXY_HOST=${PROXY_HOST}
+      - PROXY_PORT=${PROXY_PORT}
+    image: dynacurb:${TAG}
+    labels:
+      - traefik.enable=true
+      # Proxy configuration for HTTP
+      # - traefik.http.routers.dynacurb.rule=Host(`dynacurb.localhost`)
+      # - traefik.http.routers.dynacurb.entrypoints=web
+      # - traefik.http.services.dynacurb.loadbalancer.server.port=3000
+      # Proxy configuration for enabling HTTPS with HTTP redirect
+      - traefik.http.routers.dynacurb-http.entrypoints=web
+      - traefik.http.routers.dynacurb-http.rule=Host(`dynacurb.localhost`)
+      - traefik.http.routers.dynacurb-http.middlewares=dynacurb-https
+      - traefik.http.middlewares.dynacurb-https.redirectscheme.scheme=https
+      - traefik.http.routers.dynacurb.entrypoints=websecure
+      - traefik.http.routers.dynacurb.rule=Host(`dynacurb.localhost`)
+      - traefik.http.routers.dynacurb.tls=true
+      - traefik.http.services.dynacurb.loadbalancer.server.port=3000
+      # Uncomment for development if necessary
+      # ports:
+      #   - 8080:80
+      #   - 8080:443
+    restart: always
+    volumes:
+      - ./data/:/app/data
+      - dynacurb-data:/app/.next/cache
+
+  # Runs application allocation service
+  dynacurb-allocation:
+    build:
+      context: ./app
+      dockerfile: ./Dockerfile
+    container_name: dynacurb-alloc
+    depends_on:
+      dynacurb-seed:
+        condition: service_completed_successfully
+      dynacurb-database:
+        condition: service_started
+    environment:
+      - CLUSTER_TYPE=allocation
+      - LOG_TRANSPORTS=${LOGGERS}
+      - LOG_FILE_PATH=./data/alloc.log
+      - DATABASE_HOST=dynacurb-database
+      - DATABASE_PORT=5432
+      - DATABASE_SCHEMA=public
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - EXPORT_PATH=./data/export/
+      - PROXY_PROTOCOL=${PROXY_PROTOCOL}
+      - PROXY_HOST=${PROXY_HOST}
+      - PROXY_PORT=${PROXY_PORT}
+      - ALLOCATION_API_URL=http://dynacurb-julia:5000/julia/seattle
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:3000/api/graphql",
+          "|",
+          "exit 1;"
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+    image: dynacurb:${TAG}
+    restart: always
+    volumes:
+      - ./data/:/app/data
+
+  # Runs application wisemoving service
+  dynacurb-wisemoving:
+    build:
+      context: ./app
+      dockerfile: ./Dockerfile
+    container_name: dynacurb-wise
+    depends_on:
+      dynacurb-seed:
+        condition: service_completed_successfully
+      dynacurb-database:
+        condition: service_started
+    environment:
+      - CLUSTER_TYPE=wisemoving
+      - LOG_TRANSPORTS=${LOGGERS}
+      - LOG_FILE_PATH=./data/wise.log
+      - DATABASE_HOST=dynacurb-database
+      - DATABASE_PORT=5432
+      - DATABASE_SCHEMA=public
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - PROXY_PROTOCOL=${PROXY_PROTOCOL}
+      - PROXY_HOST=${PROXY_HOST}
+      - PROXY_PORT=${PROXY_PORT}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:3000/api/graphql",
+          "|",
+          "exit 1;"
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+    image: dynacurb:${TAG}
+    restart: always
+    volumes:
+      - ./data/:/app/data
+
+  # Seeds relation database on startup
+  dynacurb-seed:
+    command: >
+      bash -c '
+        cd /app/;
+        yarn install;
+        yarn compile;
+        yarn migrate;
+        yarn seed;
+      '
+    container_name: dynacurb-seed
+    depends_on:
+      dynacurb-database:
+        condition: service_started
+    environment:
+      - DATABASE_HOST=dynacurb-database
+      - DATABASE_PORT=5432
+      - DATABASE_SCHEMA=public
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_NAME=${DATABASE_NAME}
+    image: node:20
+    volumes:
+      - ./app/:/app/
+      - ./data/:/data/
+
+  # Application relational database
+  dynacurb-database:
+    cap_add:
+      - SYS_NICE
+    container_name: dynacurb-database
+    environment:
+      - PGUSER=${DATABASE_USERNAME}
+      - POSTGRES_USER=${DATABASE_USERNAME}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DB=${DATABASE_NAME}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    image: postgis/postgis:16-3.4-alpine
+    # Uncomment for development if necessary
+    # ports:
+    #   - 6543:5432
+    restart: always
+    volumes:
+      # - ./database/:/docker-entrypoint-initdb.d/
+      - dynacurb-database-data:/var/lib/postgresql/data
+
+  # Julia (Jupyter Notebook) service
+  dynacurb-julia:
+    build:
+      context: ./julia
+      dockerfile: ./Dockerfile
+    container_name: dynacurb-julia
+    environment:
+      - PASSWORD=password
+      - JUPYTER_TOKEN=easy
+    image: julia:${TAG}
+    # Uncomment for development if necessary
+    # ports:
+    #   - 8888:8888
+
+  # OSM container for loading data on a volume
+  dynacurb-setup:
+    command: >
+      bash -c '
+        if [ ! -f /data/database/planet-import-complete ]; then
+          ./run.sh import;
+        fi;
+      '
+    container_name: dynacurb-setup
+    entrypoint: ""
+    image: overv/openstreetmap-tile-server:2.3.0
+    volumes:
+      - ./osm/region.osm.pbf:/data/region.osm.pbf
+      - dynacurb-osm-data:/data/database/
+
+  # OSM container which uses the volume loaded data
+  dynacurb-osm:
+    command: "run"
+    container_name: dynacurb-osm
+    depends_on:
+      dynacurb-setup:
+        condition: service_completed_successfully
+    image: overv/openstreetmap-tile-server:2.3.0
+    # Uncomment for development if necessary
+    # ports:
+    #   - 8880:80
+    restart: always
+    volumes:
+      - ./osm/region.osm.pbf:/data/region.osm.pbf
+      - dynacurb-osm-data:/data/database/
+      
+  # OSM container for putting data on the image
+  # This will create a very large image but may be necessary for some deployments
+  # Disable the other OSM containers if enabling this one
+  # dynacurb-osm:
+  #   build:
+  #     context: ./osm
+  #     dockerfile: ./Dockerfile
+  #   command: "run"
+  #   container_name: osm-server
+  #   image: osm:${TAG}
+  #   ports:
+  #     - 8880:80
+  #   restart: always
+
+volumes:
+  dynacurb-data:
+    driver: local
+  dynacurb-database-data:
+    driver: local
+  dynacurb-osm-data:
+    driver: local
