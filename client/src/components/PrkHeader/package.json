@@ -1,6 +1,0 @@
-{
-  "name": "prk-header",
-  "version": "0.0.0",
-  "private": true,
-  "main": "./PrkHeader.js"
-}

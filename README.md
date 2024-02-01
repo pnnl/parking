@@ -1,6 +1,20 @@
-# Commercial Parking App
+# Dynacurb Parking App
 
-Commercial Parking Application is a web-based application that alerts delivery drivers in real time to available parking spaces near their destinations. Parking availability can be viewed on a map in real-time, using sensor data supplied by external services. The app can be viewed with a web browser on a mobile device or PC. Currently the app supports connections to real time sensors from Lacuna, Fybr, Cleverciti, and Automotus.
+Dynacurb Parking Application is a web-based application that alerts delivery drivers in real time to available parking spaces near their destinations. Parking availability can be viewed on a map in real-time, using sensor data supplied by external services. The app can be viewed with a web browser on a mobile device or PC. Currently the app supports connections to real time sensors from Lacuna, Fybr, Cleverciti, and Automotus.
+
+This app is a full stack typescript web application that is configured with cloud deployment, authentication, database, and a map tile server.
+
+The current stack consists of:
+
+- Deployment: Docker Compose
+- Database: Postgres (Postgis)
+- Map Tiles: Open Street Maps
+- Application: Nextjs
+- Authentication: NextAuth
+- Object Relational Mapping (ORM): Prisma
+- Data Query Layer: GraphQL
+- End to End Type Safety: Pothos and Apollo
+- Reverse Proxy: Traefik
 
 ---
 
@@ -10,37 +24,31 @@ This guide has been written, tested, and intended for Windows and Linux installa
 
 ---
 
-### Description
-
-This application is a Nodejs web application that utilizes a backend server and HTML and Javascript static web content (compiled from React) for the client. Parking spaces, occupancy status, and predictions are retreived using services that run at a specified frequency. This status is then inserted into the configured database. When the client needs spaces, occupancy, or prediction the most recent data is retrieved from the server and displayed. There are also REST API endpoints spcifically created for the external prediction service. These endpoints serve historical occupancy status as well as the latest occupancies.
-
----
-
-### Prerequesites
+## Prerequesites
 
 These applications should be installed on the host machine.
 
-- [Git](https://git-scm.com/) - required
-- [Node.js](https://nodejs.org/) - required (verions 12 - https://nodejs.org/dist/latest-v12.x/)
-- [Yarn](https://yarnpkg.com/) - required
+- [Visual Studio Code](https://code.visualstudio.com/) - `development` (optional)
+- [Git](https://git-scm.com/) - `development` (optional)
+- [Node.js](https://nodejs.org/) - `development` (verions 20.x - https://nodejs.org/dist/latest-v20.x/)
+- [Yarn](https://yarnpkg.com/) - `development`
+- [Docker-Desktop](https://www.docker.com/products/docker-desktop) - `deployment` or Docker and Docker-Compose
+    - [Docker](https://www.docker.com/products/container-runtime) - (optional)
+    - [Docker-Compose](https://docs.docker.com/compose/install/) - (optional)
 
-You will need to acquire a vector MBTile for the appropriate area (in this case Washington state). You can scquire a licensed copy of OpenStreetMap vector tiles data from: [MapTiler](https://data.maptiler.com/downloads/planet/) The data needs to be placed within the `server/mbtiles` directory and have a file extension of `.mbtiles`.
+## Development
 
----
+### Installing
 
-### Installation
+Download the Dynacurb App source code from the PNNL BitBucket repository. It's recommended to use the latest stable release from the master branch.
 
-Download the Parking application source code from the PNNL Github repository. It's recommended to use the latest stable release from the master branch.
+- [Github](https://stash.pnnl.gov/projects/D3X573/repos/dynacurb/browse)
 
-- [Github](https://github.com/pnnl/parking)
-
-If Git is installed you can checkout directly from Github which will make updating to the latest release easier. You will only have to clone the repository once. After that you can pull to get the latest updates. Every time the application is updated you'll need to go through the build process.
+If Git is installed you can checkout directly from Github which will make updating to the latest release easier. You will only have to clone the repository once. After that you can pull to get the latest updates. Every time the application is updated you'll need to go through the build and deploy process.
 
 ```bash
-git clone https://github.com/pnnl/parking.git
+git clone https://stash.pnnl.gov/scm/d3x573/dynacurb.git
 ```
-
----
 
 ### Updating
 
@@ -52,190 +60,272 @@ git pull
 git stash pop
 ```
 
----
-
 ### Building
 
-If build errors occur it is very likely that Node.js or Yarn is out of date. The following steps assumes the user is in the root directory of the application.
+If build errors occur it is very likely that Node.js or Yarn is out of date. The following steps assumes the user is in the main directory of the application.
 
-Install or update all of the dependencies for the client. If the yarn install command fails it will often succeed when running it again.
+Install or update all of the dependencies.
 
 ```bash
-cd client
+cd app
 yarn install
-```
-
-Build and deploy the client application to the server public directory.
-
-```bash
+yarn compile
 yarn build
-yarn deploy
 ```
 
-Install or update all of the dependencies for the server. The reset command will drop all of the data from the database and seed it with fresh data.
+### Initializing
+
+The database migrations and seeders are not automatically run. It is recommended that these be done manually or with a build or deployment server.
+
+To run any impending database migrations:
 
 ```bash
-cd ../server
-yarn install
+yarn migrate
+```
+
+To seed the database using the seeder scripts:
+
+```bash
+yarn seed
+```
+
+To reset the database to a clean state:
+
+> Warning: This will delete all existing data!
+
+```bash
 yarn reset
 ```
 
----
+### Running
+
+To start the app in development mode enter the following command from the `./app/` directory.
+
+```bash
+yarn dev
+```
+
+Type `CTRL-C` to stop the app.
 
 ### Configuration
 
-The client configuration must be edited before building and deploying. The primary configuration file used for the client is `/client/.env.production`. Client configuration should be performed in a local file called `/client/.env.production.local` where only fields that need to be overridden need to be specified. The client must be built and deployed for the changes to take effect.
+The primary configuration file is `./app/.env`. Changes to configuration should be made using a new file `./app/.env.local`. App client configuration options must be prefixed with `NEXT_PUBLIC_`. These are the only variables that will be available to client side code.
 
-If the client is not going to be deployed to a base URL (E.g. https://pnl.gov/example instead of https://pnl.gov) then the `homepage` attribute in `/client/package.json` will need to be set accordingly.
+> <b>Note:</b> Only configuration that differs from the base configuration file should be specified.
 
-The server configuration consists of a primary configuration file. The primary configuration file used for the server is `/server/.env`. Server configuration should be performed in a local file called `/server/.env.local` where only fields that need to be overridden need to be specified. The server must be restarted in order for the changes to take effect.
+#### Client
 
-#### General
-
-- NODE_ENV: The current server node environment of type: `production`, `develop`, or `test`
-- SERVER_PORT: The server port.
-- SERVER_ADDRESS: The server domain address.
-- HTTPS: Set to true in order to host using SSL.
-- PASSWORD_SALT: Filename of the salt to use for encrypting the password for local login and user accounts.
-- SERVER_KEY: The SSL key which must be generated for the host machine. The supplied one is not secure and should only be used for testing.
-- SERVER_CERT: The SSL cert which must be generated for the host mahine. The supplied one is not secure and should only be used for testing.
-- PUBLIC_KEY: The public key used for encrypting and decrypting the token for local login and user accounts.
-- PRIVATE_KEY: The private key used for encrypting and decrypting the token for local login and user accounts.
+Environment variables that need to be accessed in the client code must be prefixed with `NEXT_PUBLIC_`.
 
 #### Logging
 
-- LOG_CONSOLE: The logging level that should be displayed in the console.
-- LOG_FILE: The logging level that should be written to the log file `/server/server.log`.
+> <b>Note:</b> All log levels should be one of the following types: trace, debug, info, warn, error, fatal
+
+- LOG_TRANSPORTS: A comma separated list of logging transports to utilize.
+- LOG_GLOBAL_LEVEL: The logging level to use for logging all API requests.
+- LOG_CONSOLE_LEVEL: The logging level that should be displayed in console.
+- LOG_FILE_PATH: The path to write the log file `./server.log`.
+- LOG_FILE_LEVEL: The logging level that should be displayed to file.
+- LOG_DATABASE_LEVEL: The logging level that should be logged to the database.
+- LOG_PRISMA_LEVEL: Specify a logging level for showing Prisma database statements. This should only be used during development.
+
+#### Session
+
+- SESSION_UPDATE_AGE: The maximum age for a session without getting updated in seconds.
+- SESSION_MAX_AGE: The maximum age for sessions specified in seconds.
+
+#### Authentication
+
+- NEXTAUTH_URL: The complete URL to the authentication API for the deployed instance.
+- NEXTAUTH_SECRET: A random hash used to hash tokens, sign cookies, and generate cryptographic keys.
+- NEXTAUTH_PROVIDERS: Comma separated list of authentication providers to enable.
+
+#### General
+
+- GRAPHQL_CACHE_TTL: The time to live for cached GraphQL query responses in milliseconds.
+- SEEDER_LOCK: File path for the seeder lock file. Default is `./seeder.lock`.
 
 #### Database
 
-- DB_USERNAME: The database username.
-- DB_PASSWORD: The database password.
-- DB_NAME: The database name or `undefined` for default.
-- DB_SCHEMA: The database schema or `undefined` for default.
-- DB_DIALECT: The database schema of types: mysql, sqlite, pg
-- DB_HOST: The database host name.
-- DB_PORT: The database port.
-- DB_LOGGING: Set to `true` to log the SQL queries to `info`.
-- DB_MODE: Set to `update` to update the table schemas, `drop` to drop and then create the tables, or `undefined` to not update the schemas.
+- DATABASE_URL: The complete database connection URL which is populated using the following variables.
+- DATABASE_HOST: The database hostname.
+- DATABASE_PORT: The database port.
+- DATABASE_NAME: The database name.
+- DATABASE_SCHEMA: The database schema.
+- DATABASE_USERNAME: The database username.
+- DATABASE_PASSWORD: The database password.
 
-#### Map Tiles
+#### Open Street Map (OSM)
 
-- PROXY: Set to `true` if using a proxy for the map tile server.
-- PROXY_HTTPS: Set to `true` if the tile proxy server requires SSL.
-- PROXY_PORT: The tile proxy server port.
-- PROXY_ADDRESS: The tile proxy server domain address.
+- OSM_HOST: The open street map tile server hostname.
+- OSM_PORT: The open street map tile server port.
+- OSM_STYLE: The filepath to the OSM style.
 
-#### Cleverciti Service
+#### Services
 
-- CLEVERCITI_URL: The URL for this ingest service API endpoint.
-- CLEVERCITI_API_KEY: The key to use for API endpoint requests.
-- CLEVERCITI_API_SCHEDULE: The schedule to run the service in cron notation.
-- CLEVERCITI_PROXY_HOST: The proxy host address to use.
-- CLEVERCITI_PROXY_PORT: The proxy port to use.
+- CLUSTER_TYPE: Dash separated list of services to run on this instance. Providing an empty string will start all available services.
+- USE_WORKER_THREADS: Set to true to run services within a worker thread. This will only be enabled on a production instance.
+- PROXY_PROTOCOL: The protocol to use for the proxy.
+- PROXY_HOST: The proxy hostname.
+- PROXY_PORT: The proxy port.
+- LOG_CLEAN: Set to true to delete old log records from the database on app start.
+- FONTS_PATH: The file path for the fonts used by the OSM style.
+- EXPORT_PATH: The file path for exporting data.
+- SEEDER_DATA_PATH: The file path that contains the seeder data.
 
-#### Automotus Service
+#### Wisemoving
 
-- AUTOMOTUS_URL: The URL for this ingest service API endpoint.
-- AUTOMOTUS_API_KEY: The key to use for API endpoint requests.
-- AUTOMOTUS_API_SCHEDULE: The schedule to run the service in cron notation.
-- AUTOMOTUS_PROXY_HOST: The proxy host address to use.
-- AUTOMOTUS_PROXY_PORT: The proxy port to use.
+- WISEMOVING_API_URL: The base API URL for the Wisemoving data service.
+- WISEMOVING_API_KEY: The API key used to authenticate with the Wisemoving data service.
+- WISEMOVING_API_CITY_PATH: The API path for getting the list of areas for a city. It is populated with the `{city-id}`.
+- WISEMOVING_API_CITY_IDS: List of cities by Id to get data for.
+- WISEMOVING_API_AREA_PATH: The API path for getting the list of spaces for an area. It is populated with the `{area-id}`.
+- WISEMOVING_API_AREA_UPDATE: List of area names to filter on if specified.
+- WISEMOVING_API_SCHEDULE: The Wisemoving update schedule specified in cron notation with an optional seconds field or in milliseconds.
 
-#### Fybr Service
+#### Prediction
 
-- FYBR_API_URL: The URL for this ingest service API endpoint.
-- FYBR_API_USERNAME: The username to use for API endpoint requests.
-- FYBR_API_PASSWORD: The password to use for API endpoint requests.
-- FYBR_API_SCHEDULE: The schedule to run the service in cron notation.
-- FYBR_LOAD_SPACES: Set to true to load the spaces from the API on server start.
-- FYBR_PROXY_HOST: The proxy host address to use.
-- FYBR_PROXY_PORT: The proxy port to use.
+- PREDICTION_API_URL: The complete API URL for the prediction service.
+- PREDICTION_API_SCHEDULE: The prediction service update schedule specified in cron notation with an optional seconds field or in milliseconds.
 
-#### Lacuna Service
+#### Allocation
 
-- LACUNA_AUTH_URL: The URL for this ingest service authentication endpoint.
-- LACUNA_API_URL: The URL for this ingest service API endpoint.
-- LACUNA_API_BODY: The template to use as the body for API endpoint requests.
-- LACUNA_API_SCHEDULE: The schedule to run the service in cron notation.
-- LACUNA_LOAD_SPACES: Set to true to load the spaces from the API on server start.
-- LACUNA_PROXY_HOST: The proxy host address to use.
-- LACUNA_PROXY_PORT: The proxy port to use.
+- ALLOCATION_API_URL: The complete API URL for the allocation service.
+- ALLOCATION_API_SCHEDULE: The allocation service update schedule specified in cron notation with an optional seconds field or in milliseconds.
 
-#### Prediction Service
+#### Export
 
-- PREDICTION_API_URL: The URL for this prediction service API endpoint.
-- PREDICTION_API_SCHEDULE: The schedule to run the service in cron notation.
-- PREDICTION_PROXY_HOST: The proxy host address to use.
-- PREDICTION_PROXY_PORT: The proxy port to use.
+> <b>Note:</b> The valid offset units are: minute, hour, day, month, year
 
-#### Export Service
+- EXPORT_SCHEDULE: The export service update schedule specified in cron notation with an optional seconds field or in milliseconds.
+- EXPORT_OFFSET_UNIT: The time offset for grouping export files.
+- EXPORT_OFFSET_AMOUNT: The amount of offsets to group together for each file.
+- EXPORT_BACKLOG_COUNT: The number of units to export on startup.
+- EXPORT_DATE_LIKE: The database `LIKE` statement to use for exporting in day increments.
+- EXPORT_TIME_LIKE: The database `LIKE` statement to use for exporting in time increments.
 
-- EXPORT_RUN_AT_START: Set to true to export occupancy records on server start.
-- EXPORT_SCHEDULE: The schedule to run the service in cron notation.
-- EXPORT_OFFSET_UNIT: The batch size for the export server of type: `day`, `week`, `month`, etc.
-- EXPORT_OFFSET_AMOUNT: The offset to use for running the export service.
-- EXPORT_BACKLOG_COUNT: The amount of backlog to export on server start.
-- EXPORT_PATH: The relative file path for storing the exported data.
-- EXPORT_DATE_LIKE: The SQL query like statement for the date.
-- EXPORT_TIME_LIKE: The SQL query like statement for the time.
+## Open Street Map (OSM) Data
 
----
+The map tiles are generated by a server using Open Street Map data. The visualization must credit OSM by displaying a link in the corner. The raw map data can be downloaded here: [download.geofabrik.de/north-america](https://download.geofabrik.de/north-america/us.html) Map data is enormous so it's important to combine only the areas that are needed. Osmium was utilized for combining data sources for ingest. [https://osmcode.org/libosmium](https://osmcode.org/libosmium/) Finally the combined data is then hosted using a pre-made docker container. [https://hub.docker.com/r/overv/openstreetmap-tile-server](https://hub.docker.com/r/overv/openstreetmap-tile-server)
 
-### Running
-
-To start the server issue the following command.
+Combine OSM files using Osmium and Anaconda:
 
 ```bash
-yarn start
+cd osm
+osmium merge file1.osm.pbf file2.osm.pbf -o region.osm.pbf
 ```
 
-Type `CTRL-C` to stop the server.
+## Deployment
 
----
+### Docker Compose
 
-### Deployment
+A Docker compose file is included to manage the docker instances. The docker compose file will work in Windows, Mac, and Linux. By default the web application will be available on port 8080. The following commands deploy all of the docker containers.
 
-Deploying the config portal to a host without internet should be performed using the following steps:
+> Note: The OSM setup container will need to complete data import before the OSM tile server will start.
 
-- From the build machine:
-  1. Perform the `Building` step in this guide.
-  2. Create a `zip` archive of the `server` directory.
-  3. Delete the `.env.local`, `server.log`, and `db.development.sqlite` files from the archive.
-  4. Add the `README.md` to the archive.
-- From the deployment machine:
-  1. Install `Node.js` and `Yarn`.
-  2. Copy the archive from the build machine.
-  3. Expand the archive into an install directory.
-  4. Create a `.env.local` configuration file and edit as necessary.
-  5. Ensure the system is configure to match the defaults in `.env` or add the correct variables to the `.env.local` configuration file.
+> Note: Database seeding and migrations will need to be performed manually from the development instance.
 
-> Note: To update the application perform the first set of steps and then steps 2, 3, and 5 of the second section.
+Build the docker instances:
 
----
+```bash
+docker-compose build
+```
 
-### License
+Create and start the docker instances:
 
-[PNNL (BSD)](LICENSE.txt)
-                                        
-This material was prepared as an account of work sponsored by an agency of the United
-States Government. Neither the United States Government nor the United States
-Department of Energy, nor Battelle, nor any of their employees, nor any jurisdiction or
-organization that has cooperated in the development of these materials, makes any
-warranty, express or implied, or assumes any legal liability or responsibility for the
-accuracy, completeness, or usefulness or any information, apparatus, product, software,
-or process disclosed, or represents that its use would not infringe privately owned rights.
-Reference herein to any specific commercial product, process, or service by trade name,
-trademark, manufacturer, or otherwise does not necessarily constitute or imply its
-endorsement, recommendation, or favoring by the United States Government or any
-agency thereof, or Battelle Memorial Institute. The views and opinions of authors
-expressed herein do not necessarily state or reflect those of the United States Government
-or any agency thereof.
-                                        
-                     PACIFIC NORTHWEST NATIONAL LABORATORY
-                                  operated by
-                                    BATTELLE
-                                    for the
-                       UNITED STATES DEPARTMENT OF ENERGY
-                        under Contract DE-AC05-76RL01830
-                                        
+```bash
+docker-compose up -d
+```
+
+Start the docker instances:
+
+```bash
+docker-compose start
+```
+
+Stop the docker instances:
+
+```bash
+docker-compose stop
+```
+
+Destroy the docker instances along with associated volumes:
+
+```bash
+docker-compose down -v
+```
+
+### Configuration
+
+Configuration for docker compose can be found at `./.env`. The file `./docker-compose.yml` may need to be edited for some deployments.
+
+### Administration
+
+These are the commands that can be used to interact with a docker instance. Replace `<container>` with the intended container.
+
+SSH into a container to run commands:
+
+```bash
+docker exec -t -i <container> /bin/bash
+```
+
+View a container console log:
+
+```bash
+docker logs <container>
+```
+
+Export all of the images to an archive file:
+
+> Note: Replace the tag text with the appropriate tag version number.
+
+```powershell
+$images = @(); docker-compose config | ?{$_ -match "image:.*$"} | ?{$_ -replace "${TAG}", "1.0.2"} | %{$images += ($_ -replace "image: ", "").Trim()}; docker save -o docker-images.tar $images
+```
+
+```bash
+gzip docker-images.tar
+```
+
+Import the images archive file on another system:
+
+```bash
+gzip -d docker-images.tar.gz
+docker load -i docker-images.tar
+```
+
+## Updating Version
+
+To update the client version make changes within files matching these filters: `.env*,*.yml,*.json`
+
+## License
+
+Dynacurb Parking App
+Copyright © 2021, Battelle Memorial Institute
+
+1.	Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or 
+	entity lawfully obtaining a copy of this software and associated documentation files 
+	(hereinafter “the Software”) to redistribute and use the Software in source and binary forms, 
+	with or without modification.  Such person or entity may use, copy, modify, merge, publish, 
+	distribute, sublicense, and/or sell copies of the Software, and may permit others to do so, 
+	subject to the following conditions:
+	*	Redistributions of source code must retain the above copyright notice, this list of 
+		conditions and the following disclaimers. 	
+	*	Redistributions in binary form must reproduce the above copyright notice, this list of 
+		conditions and the following disclaimer in the documentation and/or other materials 
+		provided with the distribution. 
+	*	Other than as used herein, neither the name Battelle Memorial Institute or Battelle may 
+		be used in any form whatsoever without the express written consent of Battelle.  
+2.	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
+	CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, 
+	INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
+	MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+	DISCLAIMED. IN NO EVENT SHALL BATTELLE OR CONTRIBUTORS BE LIABLE 
+	FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
+	CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
+	PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
+	PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
+	THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+	(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE 
+	USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH 
+	DAMAGE.

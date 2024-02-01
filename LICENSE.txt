@@ -1,4 +1,4 @@
-Commercial Parking App
+Dynacurb Parking App
 Copyright © 2021, Battelle Memorial Institute
 
 1.	Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or 

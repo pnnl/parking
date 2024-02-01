@@ -1,6 +1,0 @@
-{
-  "name": "prk-login",
-  "version": "0.0.0",
-  "private": true,
-  "main": "./PrkLogin.js"
-}
