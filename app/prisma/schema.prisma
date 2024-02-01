@@ -1,0 +1,223 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions", "views"]
+  binaryTargets   = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+generator pothos {
+  provider     = "prisma-pothos-types"
+  prismaUtils  = true
+  clientOutput = "@prisma/client"
+  output       = "../src/pothos/index.ts"
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [postgis()]
+}
+
+model Comment {
+  // key
+  id        Int      @id @default(autoincrement())
+  // fields
+  message   String
+  // metadata
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  // foreign keys
+  userId    String?
+  // direct relations
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // indices
+  @@index([createdAt], map: "comments_createdAt")
+  @@index([updatedAt], map: "comments_updatedAt")
+  @@index([userId], map: "comments_userId")
+}
+
+model User {
+  // key
+  id            String    @id @default(cuid())
+  // fields
+  name          String?   @db.VarChar(1024)
+  email         String    @unique @db.VarChar(512)
+  image         String?
+  emailVerified DateTime? @map("email_verified")
+  scope         String?   @db.VarChar(512)
+  password      String?   @db.VarChar(1024)
+  preferences   Json?     @db.Json
+  // metadata
+  createdAt     DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @db.Timestamptz(6)
+  // indirect relations
+  accounts      Account[]
+  sessions      Session[]
+  comments      Comment[]
+
+  // indices
+  @@index([name], map: "users_name")
+  @@index([email], map: "users_email")
+}
+
+model Account {
+  // key
+  id                String   @id @default(cuid())
+  // fields
+  type              String
+  provider          String
+  providerAccountId String
+  refreshToken      String?  @map("refresh_token") @db.Text
+  accessToken       String?  @map("access_token") @db.Text
+  expiresAt         Int?     @map("expires_at")
+  tokenType         String?  @map("token_type")
+  scope             String?
+  idToken           String?  @map("id_token") @db.Text
+  sessionState      String?  @map("session_state")
+  // metadata
+  createdAt         DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @db.Timestamptz(6)
+  // foreign keys
+  userId            String
+  // direct relations
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // indices
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  // key
+  id           String   @id @default(cuid())
+  // fields
+  sessionToken String   @unique
+  expires      DateTime
+  // metadata
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(6)
+  // foreign keys
+  userId       String
+  // direct relations
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  // fields
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  // metadata
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(6)
+
+  // indices
+  @@unique([identifier, token])
+}
+
+model Log {
+  // key
+  id         Int       @id(map: "Log_pkey") @default(autoincrement())
+  // fields
+  type       enum_log?
+  message    String?   @db.VarChar(1024)
+  expiration DateTime? @db.Timestamptz(6)
+  // metadata
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime  @updatedAt @db.Timestamptz(6)
+}
+
+enum enum_log {
+  Banner
+  Trace
+  Debug
+  Info
+  Warn
+  Error
+  Fatal
+}
+
+model Occupancy {
+  // key
+  objectId    String   @id
+  // fields
+  date        String
+  time        String
+  blockId     String?
+  blockfaceId String?
+  cvlzId      String
+  occupancy   Int
+  sensors     String?
+  type        String
+  // metadata
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+
+  // indices
+  @@index([cvlzId], map: "occupancy_cvlzId")
+  @@index([objectId, cvlzId], map: "occupancy_objectId_cvlzId")
+  @@index([objectId, cvlzId, date, time], map: "occupancy_objectId_cvlzId_date_time")
+}
+
+model Prediction {
+  // key
+  objectId     String   @id
+  // fields
+  date         String
+  time         String
+  blockId      String?
+  blockfaceId  String?
+  cvlzId       String
+  maxOccupancy Int
+  minOccupancy Int
+  value        Float
+  probability  Float
+  sensors      String?
+  // metadata
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(6)
+
+  // indices
+  @@index([cvlzId], map: "prediction_cvlzId")
+  @@index([objectId, cvlzId], map: "prediction_objectId_cvlzId")
+  @@index([objectId, cvlzId, date, time], map: "prediction_objectId_cvlzId_date_time")
+}
+
+model Space {
+  objectId    String                  @id
+  // fields
+  label       String?
+  blockId     String?
+  blockfaceId String?
+  cvlzId      String?
+  cvcpct      String?
+  rowNbr      String?
+  blockStart  Float?
+  blockEnd    Float?
+  widthOffset Float?
+  geoBasys    String?
+  spaceLength Int?
+  spaceType   String?
+  spaceTyped  String?
+  timeLimit   String?
+  spaceNb     String?
+  category    String?
+  side        String?
+  currentSt   String?
+  elementKey  Int?
+  shapeLength Float?
+  geometry    Unsupported("geometry")?
+  geojson     Json
+  occupancy   Int?
+  sensors     String?
+  // metadata
+  createdAt   DateTime                @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime                @updatedAt @db.Timestamptz(6)
+
+  // indices
+  @@index([cvlzId], map: "space_cvlzId")
+  @@index([category, cvlzId], map: "space_category_cvlzId")
+  @@index([spaceType], map: "space_spaceType")
+  @@index([spaceTyped], map: "space_spaceTyped")
+  @@index([spaceType, spaceTyped], map: "space_spaceType_spaceTyped")
+  @@index([geometry], map: "space_geometry")
+}

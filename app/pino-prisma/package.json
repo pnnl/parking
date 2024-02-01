@@ -1,0 +1,12 @@
+{
+  "name": "pino-prisma",
+  "version": "1.0.0",
+  "description": "Pino transport for logging to Prisma database.",
+  "main": "index.js",
+  "license": "SEE LICENSE IN ../../LICENSE.txt",
+  "private": true,
+  "dependencies": {
+    "@prisma/client": "^5.7.0",
+    "pino-abstract-transport": "^1.1.0"
+  }
+}

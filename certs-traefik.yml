@@ -1,0 +1,4 @@
+tls:
+  certificates:
+    - certFile: /etc/certs/examplecert.crt
+      keyFile: /etc/certs/examplecert.key
