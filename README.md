@@ -1,6 +1,6 @@
-# Dynacurb Parking App
+# Dynamic Curb Allocation Application
 
-Dynacurb Parking Application is a web-based application that alerts delivery drivers in real time to available parking spaces near their destinations. Parking availability can be viewed on a map in real-time, using sensor data supplied by external services. The app can be viewed with a web browser on a mobile device or PC. Currently the app supports connections to real time sensors from Lacuna, Fybr, Cleverciti, and Automotus.
+Dynamic Curb Allocation Application is a web-based application that alerts drivers in real time to available parking spaces near their destinations. Parking availability can be viewed on a map in real-time, using predictive modeling and sensor data supplied by external services. The app can be viewed with a web browser on a mobile device or PC.
 
 This app is a full stack typescript web application that is configured with cloud deployment, authentication, database, and a map tile server.
 
