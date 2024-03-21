@@ -1,5 +1,4 @@
 import { buildOptions, schedule, startService } from "../util";
-import { existsSync, mkdirSync } from "fs";
 
 import { Occupancy } from "@prisma/client";
 import { createObjectCsvWriter } from "csv-writer";
@@ -8,10 +7,12 @@ import { logger } from "@/logging";
 import moment from "moment";
 import prisma from "@/prisma";
 import { resolve } from "path";
+import { ServiceState } from "../types";
+import { mkdir } from "fs/promises";
 
 const fields = ["date", "time", "blockId", "blockfaceId", "cvlzId", "occupancy", "sensors"];
 
-const execute = (options: ExportOptions, repeated?: true) => () => {
+const execute = (options: ExportOptions, repeated?: true) => async () => {
   let offset = options.state.offset;
   let repeat = false;
   if ((repeated || options.state.initial) && options.state.backlog > 0) {
@@ -25,7 +26,7 @@ const execute = (options: ExportOptions, repeated?: true) => () => {
   const now = offset ? moment().subtract(offset, options.state.unit) : moment();
   const dateLike = isEmpty(options.state.dateLike) ? undefined : now.format(options.state.dateLike);
   const timeLike = isEmpty(options.state.timeLike) ? undefined : now.format(options.state.timeLike);
-  prisma.$queryRaw<Occupancies>`
+  await prisma.$queryRaw<Occupancies>`
     SELECT
         "date",
         "time",
@@ -40,12 +41,9 @@ const execute = (options: ExportOptions, repeated?: true) => () => {
         "date" LIKE '${dateLike}'
         AND "time" LIKE '${timeLike}'
   `
-    .then((occupancies) => {
+    .then(async (occupancies) => {
       if (occupancies.length === 0) {
         logger.info(`No occupancies for date: ${dateLike} and time: ${timeLike}`);
-        if (repeat) {
-          execute(options, true);
-        }
         return;
       }
       let filename = ".csv";
@@ -68,14 +66,13 @@ const execute = (options: ExportOptions, repeated?: true) => () => {
         default:
           filename = "Occupancies_" + filename;
       }
-      if (!existsSync(resolve(process.cwd(), options.state.path))) {
-        mkdirSync(resolve(process.cwd(), options.state.path));
-      }
+      const dir = resolve(process.cwd(), options.state.path);
+      await mkdir(dir, { recursive: true });
       const csvWriter = createObjectCsvWriter({
         path: resolve(process.cwd(), options.state.path, filename),
         header: fields.map((a) => ({ id: a, title: a })),
       });
-      csvWriter
+      await csvWriter
         .writeRecords(occupancies)
         .then(() => {
           logger.info(
@@ -85,9 +82,6 @@ const execute = (options: ExportOptions, repeated?: true) => () => {
               filename
             )}`
           );
-          if (repeat) {
-            execute(options, true);
-          }
         })
         .catch((error: any) => {
           logger.warn(error);
@@ -96,6 +90,9 @@ const execute = (options: ExportOptions, repeated?: true) => () => {
     .catch((error) => {
       logger.warn(error);
     });
+  if (repeat) {
+    await execute(options, true)();
+  }
 };
 
 type Fields = "date" | "time" | "blockId" | "blockfaceId" | "cvlzId" | "occupancy" | "sensors";

@@ -1,8 +1,8 @@
-import { IAllowed, IBase, INormalization, IProcess } from "../types";
 import { get, intersection, intersectionWith, isEmpty, isNil, merge } from "lodash";
-
-import Base from "./base";
 import xregexp from "xregexp";
+
+import { IAllowed, IBase, INormalization, IProcess } from "../types";
+import Base from "./base";
 
 const processLettersAndNumbers = (v: string | undefined | null) =>
   isNil(v) ? "" : xregexp.replace(v, xregexp("[^\\s\\p{L}0-9]", "gm"), "");
@@ -77,15 +77,18 @@ class Normalization extends Base<INormalization> implements IBase<INormalization
           unallowed: ["TRIM", "COMPACT"],
           process: ((v) => (isNil(v) ? "" : xregexp.replace(v, /\s+/gm, ""))) as IProcess,
         },
-      ]
-        .map((r) =>
-          merge(r, {
-            allowed: (r.unallowed.length === 0
-              ? (_v) => true
-              : (...v) => this.allowed(r as INormalization, ...v)) as IAllowed<INormalization>,
-          })
-        )
-        .map((v) => Object.freeze(merge(v, { unallowed: Object.freeze(v.unallowed) })))
+      ].map((r) => ({
+        ...r,
+        allowed: ((_v) => {
+          throw new Error("Normalization allowed functon not implemented.");
+        }) as IAllowed<INormalization>,
+      })),
+      (t, r) =>
+        merge(r, {
+          allowed: (r.unallowed.length === 0
+            ? (_v) => true
+            : (...v) => (t as Normalization).allowed(r, ...v)) as IAllowed<INormalization>,
+        })
     );
   }
 
@@ -116,16 +119,16 @@ class Normalization extends Base<INormalization> implements IBase<INormalization
   /**
    * Determines if the a normalization is allowed by the b normalization(s).
    */
-  allowed = (a: INormalization | number | string, ...b: Array<INormalization | number | string>): boolean => {
+  allowed = (a: INormalization | number | string, ...b: (INormalization | number | string)[]): boolean => {
     const normalizations = b.map((v) => this.parse(v)?.name).filter((v) => v);
-    const allowed = this.parse(a)?.unallowed || [];
+    const allowed = this.parse(a)?.unallowed ?? [];
     return isEmpty(intersection(normalizations, allowed));
   };
 
   /**
    * Create a normalization function for the specified normalization types.
    */
-  process = (...types: Array<INormalization | number | string>): IProcess => {
+  process = (...types: (INormalization | number | string)[]): IProcess => {
     const joined = types.map((t) => get(t, ["label"], t)).join("|");
     const normalize = intersectionWith(
       this.values,

@@ -1,10 +1,10 @@
-import { CommentAggregate, CommentFields, CommentOrderBy, CommentWhere, CommentWhereUnique } from "./input";
-import { PagingInput, builder } from "../builder";
-
-import { authUser } from "@/auth";
 import { merge } from "lodash";
+
 import prisma from "@/prisma";
-import { transformAggregate } from "..";
+
+import { builder, PagingInput } from "../builder";
+import { transformAggregate } from "../util";
+import { CommentAggregate, CommentFields, CommentOrderBy, CommentWhere, CommentWhereUnique } from "./input";
 
 builder.queryField("readComment", (t) =>
   t.prismaField({
@@ -14,11 +14,11 @@ builder.queryField("readComment", (t) =>
     args: {
       where: t.arg({ type: CommentWhereUnique }),
     },
-    resolve: async (query, root, args, ctx, info) => {
+    resolve: async (query, _root, args, ctx, _info) => {
       if (!args.where) {
         throw new Error("Read input required.");
       }
-      const auth = await authUser(ctx.req, ctx.res);
+      const auth = ctx.authUser;
       return prisma.comment.findUniqueOrThrow({
         ...query,
         where: merge(args.where, auth.roles.admin ? {} : { userId: auth.id }),
@@ -38,8 +38,8 @@ builder.queryField("readComments", (t) =>
       orderBy: t.arg({ type: [CommentOrderBy] }),
       paging: t.arg({ type: PagingInput }),
     },
-    resolve: async (query, root, args, ctx, info) => {
-      const auth = await authUser(ctx.req, ctx.res);
+    resolve: async (query, _root, args, ctx, _info) => {
+      const auth = ctx.authUser;
       return prisma.comment.findMany({
         ...query,
         where: merge(args.where ?? {}, auth.roles.admin ? {} : { userId: auth.id }),
@@ -59,8 +59,8 @@ builder.queryField("countComments", (t) =>
     args: {
       where: t.arg({ type: CommentWhere }),
     },
-    resolve: async (root, args, ctx, info) => {
-      const auth = await authUser(ctx.req, ctx.res);
+    resolve: async (_root, args, ctx, _info) => {
+      const auth = ctx.authUser;
       return prisma.comment.count({
         where: merge(args.where ?? {}, auth.roles.admin ? {} : { userId: auth.id }),
       });
@@ -78,8 +78,8 @@ builder.queryField("groupComments", (t) =>
       where: t.arg({ type: CommentWhere }),
       aggregate: t.arg({ type: CommentAggregate }),
     },
-    resolve: async (root, args, ctx, info) => {
-      const auth = await authUser(ctx.req, ctx.res);
+    resolve: async (_root, args, ctx, _info) => {
+      const auth = ctx.authUser;
       return prisma.comment.groupBy({
         by: args.by ?? [],
         ...(transformAggregate(args.aggregate) as any),

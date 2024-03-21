@@ -1,19 +1,22 @@
-import { IBase, IConstant, IMatcher, IParse, IParseStrict } from "../types";
 import { has, isNumber, isString, merge } from "lodash";
+
+import { deepFreeze } from "@/utils/util";
+
+import { IBase, IConstant, IMatcher, IParse, IParseStrict } from "../types";
 
 abstract class Base<T extends IConstant> implements IBase<T> {
   private _matcher: IMatcher = (v) => v;
-  private _values: Array<T>;
-  private _constants: { [key: string]: T };
-  private _keys: Array<keyof T>;
+  private _values: T[];
+  private _constants: Record<string, T>;
+  private _keys: (keyof T)[];
 
-  constructor(values: Array<T>) {
+  constructor(values: T[], decorator?: (constant: Base<T>, value: T) => T) {
     if (!values?.length) {
       throw new Error("Values with at least one item must be specified.");
     }
-    this._values = values;
+    this._values = values.map((v) => deepFreeze(decorator ? decorator(this, v) : v));
     this._constants = values.reduce((p, c) => merge(p, merge({ [c.name]: c }, { [c.label]: c })), {});
-    this._keys = (Object.keys(values[0]) as Array<keyof T>).filter((k) => isString(values[0][k]));
+    this._keys = (Object.keys(values[0]) as (keyof T)[]).filter((k) => isString(values[0][k]));
   }
 
   /**

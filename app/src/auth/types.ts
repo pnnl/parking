@@ -1,7 +1,11 @@
-import { type DefaultSession } from "next-auth";
-import { User } from "@prisma/client";
-import { DefaultJWT } from "next-auth/jwt";
+import { User } from "lucia";
+import { NextApiRequest, NextApiResponse } from "next";
+import { ResponseCookie } from "next/dist/compiled/@edge-runtime/cookies";
+import { NextRequest } from "next/server";
+
 import { RoleEnum } from "@/common/types";
+
+export type CredentialType = "text" | "password";
 
 export type AuthRoles = {
   [key in RoleEnum]: boolean;
@@ -12,18 +16,36 @@ export interface AuthUser {
   roles: AuthRoles;
 }
 
-export type SessionUser = Pick<User, "id" | "scope"> & DefaultSession["user"];
+export interface AuthResponse {
+  user?: User;
+  cookie?: [key: string, value: string, cookie?: Partial<ResponseCookie> | undefined] | [options: ResponseCookie];
+  redirect?: string;
+}
 
-declare module "next-auth" {
-  /**
-   * Returned by `useSession`, `getSession` and received as a prop on the `SessionProvider` React Context
-   */
-  interface Session extends DefaultSession {
-    user?: SessionUser;
-  }
+export interface Credential {
+  label: string;
+  type: CredentialType;
+  placeholder?: string;
+}
 
-  interface JWT extends DefaultJWT {
-    id: string;
-    scope: string;
-  }
+export type Credentials = Record<string, Credential>;
+
+export type Values<T extends Credentials> = { [K in keyof T]: string };
+
+export interface NextHandler {
+  <HandlerReq extends NextApiRequest>(req: HandlerReq, res: NextApiResponse): Promise<unknown>;
+  <HandlerReqAlt extends NextRequest | Request>(req: HandlerReqAlt, res?: undefined): Promise<Response>;
+}
+export type callback = NextHandler;
+
+export type authorize<T extends Credentials, V extends Values<T>> = (
+  credentials: V | null | undefined
+) => Promise<AuthResponse>;
+
+export interface Provider<T extends Credentials> {
+  name: string;
+  label: string;
+  credentials: T;
+  callback?: callback;
+  authorize: authorize<T, Values<T>>;
 }

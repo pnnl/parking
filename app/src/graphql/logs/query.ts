@@ -1,11 +1,11 @@
-import { LogAggregate, LogFields, LogOrderBy, LogWhere, LogWhereUnique } from "./input";
-import { PagingInput, builder } from "../builder";
+import { merge } from "lodash";
 
 import { LogType } from "@/common";
-import { authUser } from "@/auth";
-import { merge } from "lodash";
 import prisma from "@/prisma";
-import { transformAggregate } from "..";
+
+import { builder, PagingInput } from "../builder";
+import { transformAggregate } from "../util";
+import { LogAggregate, LogFields, LogOrderBy, LogWhere, LogWhereUnique } from "./input";
 
 builder.queryField("readLog", (t) =>
   t.prismaField({
@@ -15,11 +15,11 @@ builder.queryField("readLog", (t) =>
     args: {
       where: t.arg({ type: LogWhereUnique }),
     },
-    resolve: async (query, root, args, ctx, info) => {
+    resolve: async (query, _root, args, ctx, _info) => {
       if (!args.where) {
         throw new Error("Read input required.");
       }
-      const auth = await authUser(ctx.req, ctx.res);
+      const auth = ctx.authUser;
       return prisma.log.findUniqueOrThrow({
         ...query,
         where: merge(args.where, auth.roles.admin ? {} : { type: LogType.BannerType?.enum }),
@@ -39,8 +39,8 @@ builder.queryField("readLogs", (t) =>
       orderBy: t.arg({ type: [LogOrderBy] }),
       paging: t.arg({ type: PagingInput }),
     },
-    resolve: async (query, root, args, ctx, info) => {
-      const auth = await authUser(ctx.req, ctx.res);
+    resolve: async (query, _root, args, ctx, _info) => {
+      const auth = ctx.authUser;
       return prisma.log.findMany({
         ...query,
         where: merge(args.where ?? {}, auth.roles.admin ? {} : { type: LogType.BannerType?.enum }),
@@ -60,8 +60,8 @@ builder.queryField("countLogs", (t) =>
     args: {
       where: t.arg({ type: LogWhere }),
     },
-    resolve: async (root, args, ctx, info) => {
-      const auth = await authUser(ctx.req, ctx.res);
+    resolve: async (_root, args, ctx, _info) => {
+      const auth = ctx.authUser;
       return prisma.log.count({
         where: merge(args.where ?? {}, auth.roles.admin ? {} : { type: LogType.BannerType?.enum }),
       });
@@ -79,7 +79,7 @@ builder.queryField("groupLogs", (t) =>
       where: t.arg({ type: LogWhere }),
       aggregate: t.arg({ type: LogAggregate }),
     },
-    resolve: async (root, args, ctx, info) => {
+    resolve: async (_root, args, _ctx, _info) => {
       return prisma.log.groupBy({
         by: args.by ?? [],
         ...(transformAggregate(args.aggregate) as any),

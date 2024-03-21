@@ -1,7 +1,8 @@
-import { DateTimeFilter, StringFilter, builder } from "../builder";
+import { omit } from "lodash";
 
 import { Prisma } from "@prisma/client";
-import { omit } from "lodash";
+
+import { builder, DateTimeFilter, StringFilter } from "../builder";
 
 export const UserFields = builder.enumType("UserFields", {
   values: Object.values(omit(Prisma.UserScalarFieldEnum, "password")),

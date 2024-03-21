@@ -10,7 +10,8 @@ const handleRequest = async (req: NextApiRequest, res: NextApiResponse) => {
   const filename = getFirstValue(param);
   if (filename?.endsWith(".json")) {
     const { dynamic, points, spaceTypes, bounds } = req.query;
-    const [w, s, e, n] = getFirstValue(bounds)?.split(/,/) ?? [-180, -85.051129, 180, 85.051129];
+    const [_w, _s, _e, _n] = getFirstValue(bounds)?.split(/,/) ?? [-180, -85.051129, 180, 85.051129];
+    // todo restrict query by bounds
     return prisma.space
       .findMany({
         where: {
@@ -95,8 +96,7 @@ const handleRequest = async (req: NextApiRequest, res: NextApiResponse) => {
         return res.status(400).json(error.message);
       });
   } else {
-    res.status(404).end();
-    return Promise.reject(new Error("Not Found"));
+    return res.status(404).json("");
   }
 };
 

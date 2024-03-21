@@ -1,6 +1,6 @@
-import { DateTimeFilter, IntFilter, LogTypeFilter, StringFilter, builder } from "../builder";
-
 import { Prisma } from "@prisma/client";
+
+import { builder, DateTimeFilter, IntFilter, LogTypeFilter, StringFilter } from "../builder";
 
 export const LogFields = builder.enumType("LogFields", {
   values: Object.values(Prisma.LogScalarFieldEnum),

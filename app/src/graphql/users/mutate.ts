@@ -1,9 +1,10 @@
-import { UserCreate, UserUpdate } from "./input";
-
-import { Prisma } from "@prisma/client";
-import { builder } from "../builder";
 import { pick } from "lodash";
+
 import prisma from "@/prisma";
+import { Prisma } from "@prisma/client";
+
+import { builder } from "../builder";
+import { UserCreate, UserUpdate } from "./input";
 
 builder.mutationField("createUser", (t) =>
   t.prismaField({
@@ -13,7 +14,7 @@ builder.mutationField("createUser", (t) =>
     args: {
       create: t.arg({ type: UserCreate }),
     },
-    resolve: async (query, root, args, ctx, info) => {
+    resolve: async (query, _root, args, _ctx, _info) => {
       if (!args.create) {
         throw new Error("Create input required.");
       }
@@ -39,7 +40,7 @@ builder.mutationField("updateUser", (t) =>
       id: t.arg({ type: "String", required: true }),
       update: t.arg({ type: UserUpdate }),
     },
-    resolve: async (query, root, args, ctx, info) => {
+    resolve: async (query, _root, args, _ctx, _info) => {
       const user: Prisma.UserUpdateInput =
         pick(args.update, ["name", "email", "password", "scope", "preferences"]) ?? {};
       return prisma.user.update({
@@ -59,7 +60,7 @@ builder.mutationField("deleteUser", (t) =>
     args: {
       id: t.arg({ type: "String", required: true }),
     },
-    resolve: async (query, root, args, ctx, info) => {
+    resolve: async (query, _root, args, _ctx, _info) => {
       return prisma.user.delete({
         ...query,
         where: { id: args.id },

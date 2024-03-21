@@ -7,44 +7,19 @@ import { logger } from "@/logging";
 import moment from "moment";
 import prisma from "@/prisma";
 import { randomUUID } from "crypto";
+import { ServiceState } from "../types";
 
 ParkingType.matcher = (v: string) =>
   NormalizationType.process("LOWERCASE", "TRIM", "COMPACT", "LETTERS", "NFKC")(v) ?? "";
 
-const begin = (options: AllocationOptions) => () => {
-  if (options.state.running) {
-    return false;
-  } else {
-    options.state.running = true;
-    options.state.count = 1;
-    return true;
-  }
-};
-
-const start = (options: AllocationOptions) => () => {
-  if (options.state.running) {
-    options.state.count += 1;
-  }
-};
-
-const end = (options: AllocationOptions) => () => {
-  options.state.count = Math.max(0, options.state.count - 1);
-  if (options.state.count === 0) {
-    options.state.running = false;
-  }
-};
-
-const execute = (options: AllocationOptions) => () => {
-  if (!begin(options)) {
-    return;
-  }
+const execute = (options: AllocationOptions) => async () => {
   const { url } = options.state;
   logger.info(`Requesting data from: ${url}/process`);
-  axios
+  await axios
     .post(`${url}/process`, {
       headers: {},
     })
-    .then((response) => {
+    .then(async (response) => {
       const error = get(response, "data.error");
       if (error) {
         throw Error(error.message);
@@ -53,7 +28,7 @@ const execute = (options: AllocationOptions) => () => {
       const items = uniqWith(
         data
           .filter((v) => v)
-          .map((space, i) => {
+          .map((space) => {
             const category = space.Parkingtype;
             const { name: spaceType } = ParkingType.parse(category) ?? ParkingType.PAID;
             const label = `CA-${space.curbname}-${space.curbnum}`;
@@ -78,35 +53,29 @@ const execute = (options: AllocationOptions) => () => {
           }),
         isEqual
       );
-      items.forEach((item) => {
-        const { date, time, cvlzId, type, updatedAt } = item;
-        start(options);
-        logger.info(`Looking for occupancy: ${cvlzId} (${date} ${time})`);
-        prisma.occupancy
-          .findMany({ where: { date, time, cvlzId } })
-          .then(([occupancy]) => {
-            start(options);
-            if (occupancy) {
-              const { objectId } = occupancy;
-              logger.info(`Updating occupancy: ${cvlzId} (${objectId})`);
-              prisma.occupancy
-                .update({ where: { objectId }, data: { type, updatedAt } })
-                .catch((error) => logger.warn(error))
-                .finally(() => end(options));
-            } else {
-              logger.info(`Creating occupancy: ${cvlzId} (${item.objectId})`);
-              prisma.occupancy
-                .create({ data: item })
-                .catch((error) => logger.warn(error))
-                .finally(() => end(options));
-            }
-          })
-          .catch((error) => logger.warn(error))
-          .finally(() => end(options));
-      });
+      await Promise.all(
+        items.map(async (item) => {
+          const { date, time, cvlzId, type, updatedAt } = item;
+          logger.info(`Looking for occupancy: ${cvlzId} (${date} ${time})`);
+          await prisma.occupancy
+            .findMany({ where: { date, time, cvlzId } })
+            .then(async ([occupancy]) => {
+              if (occupancy) {
+                const { objectId } = occupancy;
+                logger.info(`Updating occupancy: ${cvlzId} (${objectId})`);
+                await prisma.occupancy
+                  .update({ where: { objectId }, data: { type, updatedAt } })
+                  .catch((error) => logger.warn(error));
+              } else {
+                logger.info(`Creating occupancy: ${cvlzId} (${item.objectId})`);
+                await prisma.occupancy.create({ data: item }).catch((error) => logger.warn(error));
+              }
+            })
+            .catch((error) => logger.warn(error));
+        })
+      );
     })
-    .catch((error) => logger.error({ url: `${url}/process`, message: error.message, stack: error.stack }))
-    .finally(() => end(options));
+    .catch((error) => logger.error({ url: `${url}/process`, message: error.message, stack: error.stack }));
 };
 
 interface AllocationState {

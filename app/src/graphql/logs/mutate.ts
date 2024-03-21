@@ -1,10 +1,11 @@
-import { LogCreate, LogUpdate } from "./input";
+import { pick } from "lodash";
 
 import { LogType } from "@/common";
-import { Prisma } from "@prisma/client";
-import { builder } from "../builder";
-import { pick } from "lodash";
 import prisma from "@/prisma";
+import { Prisma } from "@prisma/client";
+
+import { builder } from "../builder";
+import { LogCreate, LogUpdate } from "./input";
 
 builder.mutationField("createLog", (t) =>
   t.prismaField({
@@ -14,7 +15,7 @@ builder.mutationField("createLog", (t) =>
     args: {
       create: t.arg({ type: LogCreate }),
     },
-    resolve: async (query, root, args, ctx, info) => {
+    resolve: async (query, _root, args, _ctx, _info) => {
       if (!args.create) {
         throw new Error("Create input required.");
       }
@@ -40,7 +41,7 @@ builder.mutationField("updateLog", (t) =>
       id: t.arg({ type: "Int", required: true }),
       update: t.arg({ type: LogUpdate }),
     },
-    resolve: async (query, root, args, ctx, info) => {
+    resolve: async (query, _root, args, _ctx, _info) => {
       const log: Prisma.LogUpdateInput = pick(args.update, ["type", "message", "expiration"]) ?? {};
       return prisma.log.update({
         ...query,
@@ -59,7 +60,7 @@ builder.mutationField("deleteLog", (t) =>
     args: {
       id: t.arg({ type: "Int", required: true }),
     },
-    resolve: async (query, root, args, ctx, info) => {
+    resolve: async (query, _root, args, _ctx, _info) => {
       return prisma.log.delete({
         ...query,
         where: { id: args.id },

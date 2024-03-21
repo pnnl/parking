@@ -1,10 +1,10 @@
-import { CommentCreate, CommentUpdate } from "./input";
-
-import { Prisma } from "@prisma/client";
-import { authUser } from "@/auth";
-import { builder } from "../builder";
 import { pick } from "lodash";
+
 import prisma from "@/prisma";
+import { Prisma } from "@prisma/client";
+
+import { builder } from "../builder";
+import { CommentCreate, CommentUpdate } from "./input";
 
 builder.mutationField("createComment", (t) =>
   t.prismaField({
@@ -14,11 +14,11 @@ builder.mutationField("createComment", (t) =>
     args: {
       create: t.arg({ type: CommentCreate }),
     },
-    resolve: async (query, root, args, ctx, info) => {
+    resolve: async (query, _root, args, ctx, _info) => {
       if (!args.create) {
         throw new Error("Create input required.");
       }
-      const auth = await authUser(ctx.req, ctx.res);
+      const auth = ctx.authUser;
       const comment: Prisma.CommentCreateInput = pick(args.create, ["message"]);
       comment.user = { connect: { id: auth.id } };
       return prisma.comment.create({
@@ -38,9 +38,9 @@ builder.mutationField("updateComment", (t) =>
       id: t.arg({ type: "Int", required: true }),
       update: t.arg({ type: CommentUpdate }),
     },
-    resolve: async (query, root, args, ctx, info) => {
+    resolve: async (query, _root, args, ctx, _info) => {
       const comment: Prisma.CommentUpdateInput = pick(args.update, ["message"]) ?? {};
-      const auth = await authUser(ctx.req, ctx.res);
+      const auth = ctx.authUser;
       return prisma.comment.update({
         ...query,
         where: { id: args.id, ...(auth.roles.admin ? {} : { userId: auth.id }) },
@@ -58,8 +58,8 @@ builder.mutationField("deleteComment", (t) =>
     args: {
       id: t.arg({ type: "Int", required: true }),
     },
-    resolve: async (query, root, args, ctx, info) => {
-      const auth = await authUser(ctx.req, ctx.res);
+    resolve: async (query, _root, args, ctx, _info) => {
+      const auth = ctx.authUser;
       return prisma.comment.delete({
         ...query,
         where: { id: args.id, ...(auth.roles.admin ? {} : { userId: auth.id }) },

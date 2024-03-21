@@ -33,9 +33,13 @@ class Vehicle extends Base<IVehicle> {
           label: "Emergency",
           allows: [] as string[],
         },
-      ]
-        .map((r) => merge(r, { allowed: ((...v) => this.allowed(r as IVehicle, ...v)) as IAllowed<IParking> }))
-        .map((v) => Object.freeze(merge(v, { allows: Object.freeze(v.allows) })))
+      ].map((r) => ({
+        ...r,
+        allowed: ((_v) => {
+          throw new Error("Vehicle allowed functon not implemented.");
+        }) as IAllowed<IParking>,
+      })),
+      (t, r) => merge(r, { allowed: ((...v) => (t as Vehicle).allowed(r, ...v)) as IAllowed<IParking> })
     );
   }
 
@@ -53,7 +57,7 @@ class Vehicle extends Base<IVehicle> {
    * @param b
    * @returns true if allowed
    */
-  allowed = (a: IVehicle | number | string, ...b: Array<IParking | number | string>): boolean => {
+  allowed = (a: IVehicle | number | string, ...b: (IParking | number | string)[]): boolean => {
     const vehicle = this.parseStrict(a);
     const parkings = b.map((v) => parking.parse(v)).filter((v) => v);
     const allowed = parkings.filter((p) => p?.allows.includes(vehicle?.name) || vehicle.allows.includes(p?.name ?? ""));

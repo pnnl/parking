@@ -1,54 +1,50 @@
 import { IBase, IFrequency } from "../types";
-
 import Base from "./base";
-import { merge } from "lodash";
 
 class Frequency extends Base<IFrequency> implements IBase<IFrequency> {
   constructor() {
-    super(
-      [
-        {
-          name: "second",
-          label: "Second",
-          abbr: "s",
-          plural: "seconds",
-          pattern: {
-            postgres: "YYYY-MM-DD HH24:mm:ss",
-            mysql: "%Y-%m-%d %H:%i:%s",
-          },
+    super([
+      {
+        name: "second",
+        label: "Second",
+        abbr: "s",
+        plural: "seconds",
+        pattern: {
+          postgres: "YYYY-MM-DD HH24:mm:ss",
+          mysql: "%Y-%m-%d %H:%i:%s",
         },
-        {
-          name: "minute",
-          label: "Minute",
-          abbr: "m",
-          plural: "minutes",
-          pattern: {
-            postgres: "YYYY-MM-DD HH24:mm",
-            mysql: "%Y-%m-%d %H:%i",
-          },
+      },
+      {
+        name: "minute",
+        label: "Minute",
+        abbr: "m",
+        plural: "minutes",
+        pattern: {
+          postgres: "YYYY-MM-DD HH24:mm",
+          mysql: "%Y-%m-%d %H:%i",
         },
-        {
-          name: "hour",
-          label: "Hour",
-          abbr: "h",
-          plural: "hours",
-          pattern: {
-            postgres: "YYYY-MM-DD HH24",
-            mysql: "%Y-%m-%d %H",
-          },
+      },
+      {
+        name: "hour",
+        label: "Hour",
+        abbr: "h",
+        plural: "hours",
+        pattern: {
+          postgres: "YYYY-MM-DD HH24",
+          mysql: "%Y-%m-%d %H",
         },
-        {
-          name: "day",
-          label: "Day",
-          abbr: "d",
-          plural: "days",
-          pattern: {
-            postgres: "YYYY-MM-DD",
-            mysql: "%Y-%m-%d",
-          },
+      },
+      {
+        name: "day",
+        label: "Day",
+        abbr: "d",
+        plural: "days",
+        pattern: {
+          postgres: "YYYY-MM-DD",
+          mysql: "%Y-%m-%d",
         },
-      ].map((v) => Object.freeze(merge(v, { pattern: Object.freeze(v.pattern) })))
-    );
+      },
+    ]);
   }
 
   // static references to objects

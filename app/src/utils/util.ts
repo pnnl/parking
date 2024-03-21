@@ -1,7 +1,7 @@
+import { isArray } from "lodash";
 import { IBase, ISpace, IType } from "./types";
-import { camelCase, isArray } from "lodash";
 
-import { singular } from "pluralize";
+export const getFirstValue = (value: string[] | string | undefined) => (isArray(value) ? value[0] ?? "" : value);
 
 /**
  * Calculate the maximum available space.
@@ -30,7 +30,19 @@ export const calculateAvailable = <T extends IType>(space: IBase & ISpace<T>, ty
   return Math.round(available);
 };
 
-export const getFirstValue = (value: string[] | string | undefined) => (isArray(value) ? value[0] ?? "" : value);
+/**
+ * Recursively applies Object.freeze() to an object.
+ */
+export function deepFreeze(object: any) {
+  const propNames = Reflect.ownKeys(object);
+  for (const name of propNames) {
+    const value = object[name];
+    if (value && typeof value === "object") {
+      deepFreeze(value);
+    }
+  }
+  return Object.freeze(object);
+}
 
 /**
  * Parse a string and return a boolean value.
@@ -45,26 +57,10 @@ export const templateFormat = (template: string, props: any) => {
 };
 
 /**
- * Convert a list of objects into a list of ids. Will rename the attribute to `attributeIds`.
- */
-export const objectsToIds = (object: any, attributes: Array<string> | string, remove = true) => {
-  attributes = isArray(attributes) ? attributes : [attributes];
-  attributes.forEach((a) => {
-    const ids = camelCase(`${singular(a)} Ids`);
-    const objects = (isArray(object[a]) ? object[a] : [object[a]]).filter((v: any) => v);
-    object[ids] = objects.map((v: any) => v.id);
-    if (remove) {
-      delete object[a];
-    }
-  });
-  return object;
-};
-
-/**
  * Executes the list of tasks in series.
  * The result will be an array of the results.
  */
-export const promiseChain = (tasks: Array<(r: any) => Promise<any>>) => {
+export const promiseChain = (tasks: ((r: any) => Promise<any>)[]) => {
   return tasks.reduce((chain: Promise<any>, task) => {
     return chain.then((results) => task(results).then((result) => [...results, result]));
   }, Promise.resolve([]));
@@ -74,7 +70,7 @@ export const promiseChain = (tasks: Array<(r: any) => Promise<any>>) => {
  * Executes the list of tasks in series.
  * The result will be the first promise to resolve.
  */
-export const promiseFirst = <T>(tasks: Array<() => Promise<T>>) => {
+export const promiseFirst = <T>(tasks: (() => Promise<T>)[]) => {
   return new Promise<T>(async (resolve, reject) => {
     let fault;
     for (const task of tasks) {

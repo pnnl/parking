@@ -8,7 +8,7 @@ generator pothos {
   provider     = "prisma-pothos-types"
   prismaUtils  = true
   clientOutput = "@prisma/client"
-  output       = "../src/pothos/index.ts"
+  output       = "../src/generated/pothos/index.ts"
 }
 
 datasource db {
@@ -43,7 +43,7 @@ model User {
   name          String?   @db.VarChar(1024)
   email         String    @unique @db.VarChar(512)
   image         String?
-  emailVerified DateTime? @map("email_verified")
+  emailVerified DateTime?
   scope         String?   @db.VarChar(512)
   password      String?   @db.VarChar(1024)
   preferences   Json?     @db.Json
@@ -67,13 +67,13 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refreshToken      String?  @map("refresh_token") @db.Text
-  accessToken       String?  @map("access_token") @db.Text
-  expiresAt         Int?     @map("expires_at")
-  tokenType         String?  @map("token_type")
+  refreshToken      String?  @db.Text
+  accessToken       String?  @db.Text
+  expiresAt         Int?
+  tokenType         String?
   scope             String?
-  idToken           String?  @map("id_token") @db.Text
-  sessionState      String?  @map("session_state")
+  idToken           String?  @db.Text
+  sessionState      String?
   // metadata
   createdAt         DateTime @default(now()) @db.Timestamptz(6)
   updatedAt         DateTime @updatedAt @db.Timestamptz(6)
@@ -88,30 +88,38 @@ model Account {
 
 model Session {
   // key
-  id           String   @id @default(cuid())
+  id        String   @id @default(cuid())
   // fields
-  sessionToken String   @unique
-  expires      DateTime
+  expiresAt DateTime
   // metadata
-  createdAt    DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt    DateTime @updatedAt @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
   // foreign keys
-  userId       String
+  userId    String
   // direct relations
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
   // fields
   identifier String
   token      String   @unique
-  expires    DateTime
+  expiresAt  DateTime
   // metadata
   createdAt  DateTime @default(now()) @db.Timestamptz(6)
   updatedAt  DateTime @updatedAt @db.Timestamptz(6)
 
   // indices
   @@unique([identifier, token])
+}
+
+model Seed {
+  // fields
+  filename  String   @unique @db.VarChar(1024)
+  timestamp DateTime @db.Timestamptz(6)
+  // metadata
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
 }
 
 model Log {
@@ -183,7 +191,7 @@ model Prediction {
 }
 
 model Space {
-  objectId    String                  @id
+  objectId    String                   @id
   // fields
   label       String?
   blockId     String?
@@ -210,8 +218,8 @@ model Space {
   occupancy   Int?
   sensors     String?
   // metadata
-  createdAt   DateTime                @default(now()) @db.Timestamptz(6)
-  updatedAt   DateTime                @updatedAt @db.Timestamptz(6)
+  createdAt   DateTime                 @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime                 @updatedAt @db.Timestamptz(6)
 
   // indices
   @@index([cvlzId], map: "space_cvlzId")

@@ -2,6 +2,7 @@ const build = require("pino-abstract-transport");
 const { PrismaClient } = require("@prisma/client");
 
 const transport = async function (options) {
+  const prisma = new PrismaClient();
   return build(
     async function (source) {
       for await (let obj of source) {

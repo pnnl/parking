@@ -1,16 +1,16 @@
-import { Context, Scalars } from "./types";
 import { DateTimeResolver, JSONResolver } from "graphql-scalars";
 
 import { AuthRoles } from "@/auth/types";
-import ComplexityPlugin from "@pothos/plugin-complexity";
 import { LogType } from "@/common";
-import PrismaPlugin from "@pothos/plugin-prisma";
-import PrismaTypes from "@/pothos";
-import PrismaUtils from "@pothos/plugin-prisma-utils";
-import SchemaBuilder from "@pothos/core";
-import ScopeAuthPlugin from "@pothos/plugin-scope-auth";
-import { authUser } from "@/auth";
+import PrismaTypes from "@/generated/pothos";
 import prisma from "@/prisma";
+import SchemaBuilder from "@pothos/core";
+import ComplexityPlugin from "@pothos/plugin-complexity";
+import PrismaPlugin from "@pothos/plugin-prisma";
+import PrismaUtils from "@pothos/plugin-prisma-utils";
+import ScopeAuthPlugin from "@pothos/plugin-scope-auth";
+
+import { Context, Scalars } from "./types";
 
 export const builder = new SchemaBuilder<{
   Context: Context;
@@ -19,10 +19,7 @@ export const builder = new SchemaBuilder<{
   Scalars: Scalars;
 }>({
   plugins: [ScopeAuthPlugin, PrismaPlugin, PrismaUtils, ComplexityPlugin],
-  authScopes: async (context) => {
-    const auth = await authUser(context.req, context.res);
-    return auth.roles;
-  },
+  authScopes: async (context) => context.authUser.roles,
   scopeAuthOptions: {
     // Recommended when using subscriptions
     // when this is not set, auth checks are run when event is resolved rather than when the subscription is created

@@ -1,4 +1,4 @@
-import { NormalizationType } from "..";
+import { NormalizationType } from "../";
 
 describe("constants.NormalizationType", () => {
   describe("NormalizationType.parse()", () => {

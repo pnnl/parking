@@ -10,7 +10,8 @@ const handleRequest = async (req: NextApiRequest, res: NextApiResponse) => {
   const { param } = req.query ?? {};
   const filename = getFirstValue(param);
   if (filename?.endsWith(".json")) {
-    const { availability, requirement, n, e, s, w } = req.query;
+    const { availability, requirement, _n, _e, _s, _w } = req.query;
+    // todo restrict query by bounds
     const duration = parseInt(getFirstValue(availability) ?? "5");
     const m = moment().local();
     const times = range(0, duration)
@@ -180,8 +181,7 @@ const handleRequest = async (req: NextApiRequest, res: NextApiResponse) => {
         return res.status(400).json(error.message);
       });
   } else {
-    res.status(404).end();
-    return Promise.reject(new Error("Not Found"));
+    return res.status(404).json("");
   }
 };
 

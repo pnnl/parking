@@ -1,8 +1,8 @@
-import { PagingInput, builder } from "../builder";
-import { UserAggregate, UserFields, UserOrderBy, UserWhere, UserWhereUnique } from "./input";
-
 import prisma from "@/prisma";
-import { transformAggregate } from "..";
+
+import { builder, PagingInput } from "../builder";
+import { transformAggregate } from "../util";
+import { UserAggregate, UserFields, UserOrderBy, UserWhere, UserWhereUnique } from "./input";
 
 builder.queryField("readUser", (t) =>
   t.prismaField({
@@ -12,7 +12,7 @@ builder.queryField("readUser", (t) =>
     args: {
       where: t.arg({ type: UserWhereUnique }),
     },
-    resolve: async (query, root, args, ctx, info) => {
+    resolve: async (query, _root, args, _ctx, _info) => {
       if (!args.where) {
         throw new Error("Read input required.");
       }
@@ -35,7 +35,7 @@ builder.queryField("readUsers", (t) =>
       orderBy: t.arg({ type: [UserOrderBy] }),
       paging: t.arg({ type: PagingInput }),
     },
-    resolve: async (query, root, args, ctx, info) => {
+    resolve: async (query, _root, args, _ctx, _info) => {
       return prisma.user.findMany({
         ...query,
         where: args.where ?? {},
@@ -55,7 +55,7 @@ builder.queryField("countUsers", (t) =>
     args: {
       where: t.arg({ type: UserWhere }),
     },
-    resolve: async (root, args, ctx, info) => {
+    resolve: async (_root, args, _ctx, _info) => {
       return prisma.user.count({
         where: args.where ?? {},
       });
@@ -73,7 +73,7 @@ builder.queryField("groupUsers", (t) =>
       where: t.arg({ type: UserWhere }),
       aggregate: t.arg({ type: UserAggregate }),
     },
-    resolve: async (root, args, ctx, info) => {
+    resolve: async (_root, args, _ctx, _info) => {
       return prisma.user.groupBy({
         by: args.by ?? [],
         ...(transformAggregate(args.aggregate) as any),

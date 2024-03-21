@@ -1,14 +1,14 @@
-import { authUser } from "@/auth";
-import { builder } from "../builder";
 import prisma from "@/prisma";
+
+import { builder } from "../builder";
 
 builder.queryField("readCurrent", (t) =>
   t.prismaField({
     description: "Read the currently logged in user.",
     authScopes: { user: true },
     type: "User",
-    resolve: async (query, root, args, ctx, info) => {
-      const auth = await authUser(ctx.req, ctx.res);
+    resolve: async (query, _root, args, ctx, _info) => {
+      const auth = ctx.authUser;
       if (auth.id === null) {
         throw new Error("User must be logged in.");
       }

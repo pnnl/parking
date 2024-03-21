@@ -22,7 +22,8 @@ const findFont = (font: string | undefined, filename: string) =>
   });
 
 const handleRequest = async (req: NextApiRequest, res: NextApiResponse) => {
-  let { params, fontstack, range } = req.query ?? {};
+  const { params } = req.query ?? {};
+  let { fontstack, range } = req.query ?? {};
   if (isArray(params) && params.length > 1) {
     [fontstack, range] = params;
   }
@@ -36,11 +37,11 @@ const handleRequest = async (req: NextApiRequest, res: NextApiResponse) => {
   const filename = range?.toLowerCase().endsWith(".pbf") ? range : `${range}.pbf`;
   return promiseFirst(fonts.map((font) => () => findFont(font, filename)))
     .then((data) => {
-      res.status(200).send(data);
+      return res.status(200).send(data);
     })
     .catch((error) => {
       logger.warn(error, `Failed to find font for: ${fonts}-${filename}`);
-      res.status(404).end();
+      return res.status(404).json("");
     });
 };
 

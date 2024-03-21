@@ -20,7 +20,6 @@
 .swc
 .DS_Store
 *.pem
-seeder.lock
 app.log*
 
 # debug

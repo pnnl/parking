@@ -1,9 +1,10 @@
-import { Prisma } from "@prisma/client";
-import { UserUpdate } from "../users/input";
-import { authUser } from "@/auth";
-import { builder } from "../builder";
 import { pick } from "lodash";
+
 import prisma from "@/prisma";
+import { Prisma } from "@prisma/client";
+
+import { builder } from "../builder";
+import { UserUpdate } from "../users/input";
 
 builder.mutationField("updateCurrent", (t) =>
   t.prismaField({
@@ -13,9 +14,9 @@ builder.mutationField("updateCurrent", (t) =>
     args: {
       update: t.arg({ type: UserUpdate }),
     },
-    resolve: async (query, root, args, ctx, info) => {
+    resolve: async (query, _root, args, ctx, _info) => {
       const user: Prisma.UserUpdateInput = pick(args.update, ["name", "email", "password", "preferences"]) ?? {};
-      const auth = await authUser(ctx.req, ctx.res);
+      const auth = ctx.authUser;
       if (auth.id === null) {
         throw new Error("User must be logged in.");
       }
@@ -33,8 +34,8 @@ builder.mutationField("deleteCurrent", (t) =>
     description: "Delete the currently logged in user.",
     authScopes: { user: true },
     type: "User",
-    resolve: async (query, root, args, ctx, info) => {
-      const auth = await authUser(ctx.req, ctx.res);
+    resolve: async (query, _root, _args, ctx, _info) => {
+      const auth = ctx.authUser;
       if (auth.id === null) {
         throw new Error("User must be logged in.");
       }

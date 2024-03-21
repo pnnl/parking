@@ -5,9 +5,9 @@ const config: CodegenConfig = {
     babel: "./codegen.babelrc",
   },
   schema: "schema.graphql",
-  documents: ["src/**/*.{ts,tsx}"],
+  documents: ["src/**/*.{ts,tsx,graphql}"],
   generates: {
-    "./src/gql/": {
+    "./src/generated/queries/": {
       preset: "client",
     },
   },

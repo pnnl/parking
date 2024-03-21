@@ -9,6 +9,10 @@ docker-images.**
 .vscode
 .DS_Store
 
+# certs
+/certs/*
+!/certs/README.md
+
 # data
 /database/*.sql
 /osm/*.osm.pbf

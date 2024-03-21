@@ -1,0 +1,185 @@
+.bp5-portal {
+  .bp5-overlay {
+    .dialog {
+      width: 60%;
+    }
+  }
+}
+
+.map {
+  .popup {
+    div.mapboxgl-popup-content {
+      border-radius: 10px;
+    }
+  }
+
+  .available {
+    div.mapboxgl-popup-content {
+      border: 3px solid #43ba6a;
+    }
+  }
+
+  .unknown {
+    div.mapboxgl-popup-content {
+      border: 3px solid #c6b773;
+    }
+  }
+
+  .spaces {
+    div.mapboxgl-popup-content {
+      border: 3px solid #9b9b9b;
+    }
+  }
+
+  .occupied {
+    div.mapboxgl-popup-content {
+      border: 3px solid #c44a40;
+    }
+  }
+
+  .indeterminate {
+    div.mapboxgl-popup-content {
+      border: 3px solid #d98164;
+    }
+  }
+
+  .popup-header {
+    display: flex;
+  }
+
+  .popup-spacer {
+    flex: 1 0 auto;
+  }
+}
+
+.control {
+  display: -webkit-box;
+  text-align: left;
+  margin: .5em;
+  position: absolute;
+  left: 0px;
+
+  .title {
+    font-size: medium;
+    margin: auto;
+    padding-right: 2em;
+    flex: 1;
+  }
+
+  .card {
+    width: 300;
+    max-width: 300;
+  }
+
+  .actions {
+    display: flex;
+  }
+
+  .icons {
+    padding: 0;
+  }
+
+  .content {
+    padding-top: 1em;
+  }
+
+  .expand {
+    transform: rotate(0deg);
+    margin-left: auto;
+  }
+
+  .expand-open {
+    transform: rotate(180deg)
+  }
+
+  .form {
+    width: 100%;
+    margin-bottom: 20px;
+  }
+
+  .form-entry {
+    position: relative;
+  }
+
+  .info-icon {
+    position: absolute;
+    margin: auto;
+    text-align: center;
+    top: 50%;
+    bottom: 50%;
+  }
+
+  .select-availability {
+    width: 120px;
+    margin-left: 50px;
+  }
+
+  .select-deferred {
+    width: 120px;
+    margin-left: 50px;
+  }
+
+  .time-icon {
+    position: absolute;
+    margin: auto;
+    margin-left: 8px;
+    text-align: center;
+    top: 50%;
+    bottom: 50%;
+  }
+
+  .truck-icon {
+    position: absolute;
+    margin: auto;
+    margin-left: 8px;
+    text-align: center;
+    top: 50%;
+    bottom: 50%;
+  }
+
+  .label-requirement {
+    display: inline-block;
+    margin-left: 46px;
+    margin-right: 16px;
+    margin-top: 7px;
+    margin-bottom: 7px;
+  }
+
+  .select-requirement {
+    width: 120px;
+    margin-left: 50px;
+  }
+
+  .avatar {
+    display: inline-flex;
+  }
+
+  .symbol {
+    display: inline-flex;
+    color: #ffffff;
+    text-shadow: -1px 0 #88888d 0 1px #88888d 1px 0 #88888d 0 -1px #88888d;
+  }
+
+  .label {
+    margin-left: 0.5em;
+  }
+
+  .label-available {
+    margin-right: 16px;
+  }
+
+  .arrow-upward {
+    transform: translate(0, 10px) scale(1, 1.5);
+    color: #43ba6a;
+  }
+
+  .unknown {
+    transform: translate(0, 6px) scale(1, 3.0) rotate(90deg);
+    color: #c6b773;
+  }
+
+  .arrow-downward {
+    transform: translate(0, 10px) scale(1, 1.5);
+    color: #c44a40;
+  }
+}

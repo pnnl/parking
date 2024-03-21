@@ -13,7 +13,7 @@ const transports = (process.env.LOG_TRANSPORTS ?? "")
   .filter((v) => v.length > 0);
 
 const builder = pino({
-  name: "dynacurb",
+  name: process.env.PROJECT_NAME,
   browser: {},
   level: process.env.LOG_GLOBAL_LEVEL ?? "debug",
   transport: {

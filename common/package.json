@@ -1,0 +1,12 @@
+{
+  "name": "dynacurb-common",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "license": "SEE LICENSE IN ../LICENSE.txt",
+  "private": true,
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "xregexp": "^5.1.1"
+  }
+}

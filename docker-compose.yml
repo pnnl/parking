@@ -11,24 +11,33 @@ services:
       - --providers.docker.exposedbydefault=false
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
-      # Uncomment when providing TLS certificates
-      # - --providers.file.directory=/etc/traefik/dynamic
+      - --entrypoints.postgres.address=:5432
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.email=${ADMIN_EMAIL}
+      - --certificatesresolvers.letsencrypt.acme.storage=/etc/certs/letsencrypt.json
+      - --certificatesresolvers.letsencrypt.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
     container_name: dynacurb-proxy
+    depends_on:
+      dynacurb-init:
+        condition: service_completed_successfully
+    hostname: proxy
     image: traefik:v2.10
     ports:
       - 80:80
       - 443:443
       - 8080:8080
+      - 6543:5432
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      # Uncomment when providing TLS certificates
-      # - ./certs-traefik.yml:/etc/traefik/dynamic/certs-traefik.yml
-      # - ./certs/:/etc/certs/
+      - ./certs/:/etc/certs/
+      - ./certs-traefik.yml:/etc/traefik/dynamic/certs-traefik.yml
 
   # Simple service for checking proxy
   dynacurb-whoami:
     image: traefik/whoami
     container_name: dynacurb-whoami
+    hostname: whoami
     labels:
       - traefik.enable=true
       - traefik.http.routers.whoami.rule=Host(`whoami.localhost`)
@@ -42,13 +51,13 @@ services:
       dockerfile: ./Dockerfile
     container_name: dynacurb-app
     depends_on:
-      dynacurb-seed:
+      dynacurb-init:
         condition: service_completed_successfully
       dynacurb-database:
         condition: service_started
     environment:
       - PORT=3000
-      - CLUSTER_TYPE=app
+      - CLUSTER_TYPE=app-log
       - LOG_TRANSPORTS=${LOGGERS}
       - LOG_FILE_PATH=./data/app.log
       - DATABASE_HOST=dynacurb-database
@@ -59,35 +68,37 @@ services:
       - DATABASE_NAME=${DATABASE_NAME}
       - OSM_HOST=dynacurb-osm
       - OSM_PORT=80
-      - NEXTAUTH_URL=${AUTH_URL}
-      - NEXTAUTH_SECRET=${SECRET}
-      - NEXTAUTH_PROVIDERS=${AUTHENTICATION}
+      - AUTH_PROVIDERS=${AUTHENTICATION}
+      - PROXY_PROTOCOL=${PROXY_PROTOCOL}
       - FONTS_PATH=./data/fonts/
       - EXPORT_PATH=./data/export/
-      - OSM_STYLE=./data/osm/style.json
-      - PROXY_PROTOCOL=${PROXY_PROTOCOL}
       - PROXY_HOST=${PROXY_HOST}
       - PROXY_PORT=${PROXY_PORT}
+    healthcheck:
+      test: "curl --fail http://localhost:3000 || exit 1"
+      interval: 10s
+      timeout: 10s
+      retries: 120
+    hostname: app
     image: dynacurb:${TAG}
     labels:
       - traefik.enable=true
-      # Proxy configuration for HTTP
-      # - traefik.http.routers.dynacurb.rule=Host(`dynacurb.localhost`)
-      # - traefik.http.routers.dynacurb.entrypoints=web
-      # - traefik.http.services.dynacurb.loadbalancer.server.port=3000
-      # Proxy configuration for enabling HTTPS with HTTP redirect
-      - traefik.http.routers.dynacurb-http.entrypoints=web
-      - traefik.http.routers.dynacurb-http.rule=Host(`dynacurb.localhost`)
-      - traefik.http.routers.dynacurb-http.middlewares=dynacurb-https
-      - traefik.http.middlewares.dynacurb-https.redirectscheme.scheme=https
-      - traefik.http.routers.dynacurb.entrypoints=websecure
-      - traefik.http.routers.dynacurb.rule=Host(`dynacurb.localhost`)
-      - traefik.http.routers.dynacurb.tls=true
-      - traefik.http.services.dynacurb.loadbalancer.server.port=3000
-      # Uncomment for development if necessary
-      # ports:
-      #   - 8080:80
-      #   - 8080:443
+      - traefik.http.services.nextapp.loadbalancer.server.port=3000
+      - traefik.http.routers.nextapp-http.entrypoints=web
+      - traefik.http.routers.nextapp-http.rule=Host(`${COMPOSE_PROJECT_NAME}.localhost`)
+      - traefik.http.routers.nextapp-http.middlewares=nextapp-https
+      - traefik.http.middlewares.nextapp-https.redirectscheme.scheme=https
+      - traefik.http.routers.nextapp.entrypoints=websecure
+      - traefik.http.routers.nextapp.rule=Host(`${COMPOSE_PROJECT_NAME}.localhost`)
+      - traefik.http.routers.nextapp.tls=true
+      - traefik.http.routers.hostname-http.entrypoints=web
+      - traefik.http.routers.hostname-http.rule=Host(`${HOSTNAME}`)
+      - traefik.http.routers.hostname-http.middlewares=nextapp-https
+      - traefik.http.middlewares.hostname-https.redirectscheme.scheme=https
+      - traefik.http.routers.hostname.entrypoints=websecure
+      - traefik.http.routers.hostname.rule=Host(`${HOSTNAME}`)
+      - traefik.http.routers.hostname.tls=true
+      - traefik.http.routers.hostname.tls.certresolver=letsencrypt
     restart: always
     volumes:
       - ./data/:/app/data
@@ -100,7 +111,7 @@ services:
       dockerfile: ./Dockerfile
     container_name: dynacurb-alloc
     depends_on:
-      dynacurb-seed:
+      dynacurb-init:
         condition: service_completed_successfully
       dynacurb-database:
         condition: service_started
@@ -120,15 +131,7 @@ services:
       - PROXY_PORT=${PROXY_PORT}
       - ALLOCATION_API_URL=http://dynacurb-julia:5000/julia/seattle
     healthcheck:
-      test:
-        [
-          "CMD",
-          "curl",
-          "-f",
-          "http://localhost:3000/api/graphql",
-          "|",
-          "exit 1;"
-        ]
+      test: "curl http://localhost:3000/api/graphql"
       interval: 10s
       timeout: 10s
       retries: 120
@@ -144,7 +147,7 @@ services:
       dockerfile: ./Dockerfile
     container_name: dynacurb-wise
     depends_on:
-      dynacurb-seed:
+      dynacurb-init:
         condition: service_completed_successfully
       dynacurb-database:
         condition: service_started
@@ -162,15 +165,7 @@ services:
       - PROXY_HOST=${PROXY_HOST}
       - PROXY_PORT=${PROXY_PORT}
     healthcheck:
-      test:
-        [
-          "CMD",
-          "curl",
-          "-f",
-          "http://localhost:3000/api/graphql",
-          "|",
-          "exit 1;"
-        ]
+      test: "curl http://localhost:3000/api/graphql"
       interval: 10s
       timeout: 10s
       retries: 120
@@ -179,20 +174,43 @@ services:
     volumes:
       - ./data/:/app/data
 
-  # Seeds relation database on startup
-  dynacurb-seed:
+  # Creates self-signed TLS certs for localhost and domain and seeds relational database on startup
+  dynacurb-init:
+    build:
+      context: ./
+      dockerfile: ./init/Dockerfile
     command: >
       bash -c '
+        if [ ! -f /etc/certs/mkcert-ca.crt ]; then
+          mkcert create-ca \
+            --key "/etc/certs/mkcert-ca.key" \
+            --cert "/etc/certs/mkcert-ca.crt"
+        fi;
+        if [ ! -f /etc/certs/mkcert-local.crt ]; then
+          mkcert create-cert \
+            --ca-key "/etc/certs/mkcert-ca.key" \
+            --ca-cert "/etc/certs/mkcert-ca.crt" \
+            --key "/etc/certs/mkcert-local.key" \
+            --cert "/etc/certs/mkcert-local.crt" \
+            --domain "${COMPOSE_PROJECT_NAME}.localhost"
+        fi;
+        if [ ! -f /etc/certs/mkcert-hostname.crt ]; then
+          mkcert create-cert \
+            --ca-key "/etc/certs/mkcert-ca.key" \
+            --ca-cert "/etc/certs/mkcert-ca.crt" \
+            --key "/etc/certs/mkcert-hostname.key" \
+            --cert "/etc/certs/mkcert-hostname.crt" \
+            --domain "${HOSTNAME}"
+        fi;
         cd /app/;
-        yarn install;
-        yarn compile;
         yarn migrate;
         yarn seed;
+        exit 0;
       '
-    container_name: dynacurb-seed
+    container_name: dynacurb-init
     depends_on:
       dynacurb-database:
-        condition: service_started
+        condition: service_healthy
     environment:
       - DATABASE_HOST=dynacurb-database
       - DATABASE_PORT=5432
@@ -200,9 +218,10 @@ services:
       - DATABASE_USERNAME=${DATABASE_USERNAME}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
       - DATABASE_NAME=${DATABASE_NAME}
-    image: node:20
+    hostname: init
+    image: init:${TAG}
     volumes:
-      - ./app/:/app/
+      - ./certs/:/etc/certs/
       - ./data/:/data/
 
   # Application relational database
@@ -221,12 +240,14 @@ services:
       timeout: 10s
       retries: 10
     image: postgis/postgis:16-3.4-alpine
-    # Uncomment for development if necessary
-    # ports:
-    #   - 6543:5432
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.database.rule=Host(`postgres.localhost`)
+      - traefik.http.routers.database.entrypoints=postgres
+      - traefik.http.services.database.loadbalancer.server.port=5432
     restart: always
     volumes:
-      # - ./database/:/docker-entrypoint-initdb.d/
+      - ./database/:/docker-entrypoint-initdb.d/
       - dynacurb-database-data:/var/lib/postgresql/data
 
   # Julia (Jupyter Notebook) service
@@ -239,9 +260,11 @@ services:
       - PASSWORD=password
       - JUPYTER_TOKEN=easy
     image: julia:${TAG}
-    # Uncomment for development if necessary
-    # ports:
-    #   - 8888:8888
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.julia.rule=Host(`julia.localhost`)
+      - traefik.http.routers.julia.entrypoints=web
+      - traefik.http.services.julia.loadbalancer.server.port=8888
 
   # OSM container for loading data on a volume
   dynacurb-setup:
@@ -254,6 +277,8 @@ services:
     container_name: dynacurb-setup
     entrypoint: ""
     image: overv/openstreetmap-tile-server:2.3.0
+    profiles:
+      - osm
     volumes:
       - ./osm/region.osm.pbf:/data/region.osm.pbf
       - dynacurb-osm-data:/data/database/
@@ -265,28 +290,36 @@ services:
     depends_on:
       dynacurb-setup:
         condition: service_completed_successfully
+    hostname: dynacurb-osm
     image: overv/openstreetmap-tile-server:2.3.0
-    # Uncomment for development if necessary
-    # ports:
-    #   - 8880:80
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.osm.rule=Host(`osm.localhost`)
+      - traefik.http.routers.osm.entrypoints=web
+      - traefik.http.services.osm.loadbalancer.server.port=80
+    profiles:
+      - osm
     restart: always
     volumes:
-      - ./osm/region.osm.pbf:/data/region.osm.pbf
       - dynacurb-osm-data:/data/database/
-      
+
   # OSM container for putting data on the image
-  # This will create a very large image but may be necessary for some deployments
-  # Disable the other OSM containers if enabling this one
-  # dynacurb-osm:
-  #   build:
-  #     context: ./osm
-  #     dockerfile: ./Dockerfile
-  #   command: "run"
-  #   container_name: osm-server
-  #   image: osm:${TAG}
-  #   ports:
-  #     - 8880:80
-  #   restart: always
+  dynacurb-osm-full:
+    build:
+      context: ./osm
+      dockerfile: ./Dockerfile
+    command: "run"
+    container_name: dynacurb-osm-full
+    hostname: dynacurb-osm
+    image: osm:${TAG}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.osm.rule=Host(`osm.localhost`)
+      - traefik.http.routers.osm.entrypoints=web
+      - traefik.http.services.osm.loadbalancer.server.port=80
+    profiles:
+      - osm-full
+    restart: always
 
 volumes:
   dynacurb-data:

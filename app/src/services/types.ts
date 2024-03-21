@@ -1,4 +1,4 @@
-interface ServiceOptions {
+export interface ServiceOptions {
   schedule: string | undefined;
   service: string;
   leading?: boolean;
@@ -10,6 +10,6 @@ interface ServiceOptions {
   };
 }
 
-interface ServiceState<T = {}> extends Readonly<ServiceOptions> {
+export interface ServiceState<T = {}> extends Readonly<ServiceOptions> {
   state: T;
 }

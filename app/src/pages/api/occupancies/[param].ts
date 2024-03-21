@@ -124,7 +124,8 @@ const handleRequest = async (req: NextApiRequest, res: NextApiResponse) => {
   const filename = getFirstValue(param);
   if (filename?.endsWith(".json")) {
     const { requirement, bounds, vehicle, deferred } = req.query ?? {};
-    const [w, s, e, n] = getFirstValue(bounds)?.split(/,/) ?? [-180, -85.051129, 180, 85.051129];
+    const [_w, _s, _e, _n] = getFirstValue(bounds)?.split(/,/) ?? [-180, -85.051129, 180, 85.051129];
+    // todo restrict query by bounds
     const required = parseInt(getFirstValue(requirement) ?? "20");
     const vehicleType = VehicleType.parse(getFirstValue(vehicle) ?? "");
     const parkingTypes = vehicleType
@@ -317,7 +318,7 @@ const handleRequest = async (req: NextApiRequest, res: NextApiResponse) => {
       return res.status(200).send(data);
     });
   } else {
-    return res.status(404).end();
+    return res.status(404).json("");
   }
 };
 

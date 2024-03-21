@@ -291,9 +291,13 @@ class Parking extends Base<IParking> {
           label: "NOT A DESIGNATED CROSSWALK",
           allows: [] as string[],
         },
-      ]
-        .map((r) => merge(r, { allowed: ((...v) => this.allowed(r as IParking, ...v)) as IAllowed<IVehicle> }))
-        .map((v) => Object.freeze(merge(v, { allows: Object.freeze(v.allows) })))
+      ].map((r) => ({
+        ...r,
+        allowed: ((_v) => {
+          throw new Error("Parking allowed functon not implemented.");
+        }) as IAllowed<IVehicle>,
+      })),
+      (t, r) => merge(r, { allowed: ((...v) => (t as Parking).allowed(r as IParking, ...v)) as IAllowed<IVehicle> })
     );
   }
 
@@ -309,7 +313,7 @@ class Parking extends Base<IParking> {
    * @param b
    * @returns true if allowed
    */
-  allowed = (a: IParking | number | string, ...b: Array<IVehicle | number | string>): boolean => {
+  allowed = (a: IParking | number | string, ...b: (IVehicle | number | string)[]): boolean => {
     const parking = this.parseStrict(a);
     const vehicles = b.map((v) => vehicle.parse(v)).filter((v) => v);
     const allowed = vehicles.filter((v) => v?.allows.includes(parking?.name) || parking.allows.includes(v?.name ?? ""));

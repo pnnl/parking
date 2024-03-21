@@ -1,4 +1,6 @@
+import { logger } from "@/logging";
 import prisma from "@/prisma";
+import { pick } from "lodash";
 
 const data = [
   {
@@ -32,13 +34,13 @@ const main = async () => {
     for (const record of data) {
       await prisma.user.upsert({
         where: { id: record.id },
-        update: {},
+        update: pick(record, ["name", "email", "password", "scope"]),
         create: record,
       });
     }
-    console.info(`Added ${data.length} record${data.length === 1 ? "" : "s"} to the user table.`);
+    logger.info(`Upserted ${data.length} record${data.length === 1 ? "" : "s"} for the user table.`);
   } catch (error: any) {
-    console.warn(error);
+    logger.warn(error);
   }
 };
 

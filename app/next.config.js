@@ -10,7 +10,7 @@ const nextConfig = {
       },
       {
         source: "/api/map/style",
-        destination: "/api/osm/style",
+        destination: "/osm/style.json",
       },
     ];
   },
@@ -36,7 +36,11 @@ const nextConfig = {
   experimental: {
     nextScriptWorkers: true,
     instrumentationHook: true,
-    serverComponentsExternalPackages: ["pino", "pino-pretty", "pino-prisma"],
+    serverComponentsExternalPackages: ["pino", "pino-pretty", "pino-prisma", "jsonpath"],
+  },
+  webpack: (config) => {
+    config.externals.push("@node-rs/argon2", "@node-rs/bcrypt");
+    return config;
   },
 };
 

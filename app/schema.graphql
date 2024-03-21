@@ -1,3 +1,90 @@
+type Account {
+  accessToken: String
+  createdAt: DateTime!
+  expiresAt: Int
+  id: String!
+  idToken: String
+  provider: String!
+  providerAccountId: String!
+  refreshToken: String
+  scope: String
+  sessionState: String
+  tokenType: String
+  type: String!
+  updatedAt: DateTime!
+  user: User
+  userId: String
+}
+
+input AccountAggregate {
+  average: [AccountFields!]
+  count: [AccountFields!]
+  maximum: [AccountFields!]
+  minimum: [AccountFields!]
+  sum: [AccountFields!]
+}
+
+input AccountCreateInput {
+  expiresAt: Int
+  idToken: String
+  provider: String!
+  providerAccountId: String!
+  scope: String
+  type: String!
+  userId: String!
+}
+
+enum AccountFields {
+  accessToken
+  createdAt
+  expiresAt
+  id
+  idToken
+  provider
+  providerAccountId
+  refreshToken
+  scope
+  sessionState
+  tokenType
+  type
+  updatedAt
+  userId
+}
+
+input AccountFilter {
+  createdAt: DateTimeFilter
+  id: StringFilter
+  provider: StringFilter
+  type: StringFilter
+  updatedAt: DateTimeFilter
+  user: UserFilter
+  userId: StringFilter
+}
+
+input AccountOrderBy {
+  createdAt: OrderBy
+  id: OrderBy
+  provider: OrderBy
+  type: OrderBy
+  updatedAt: OrderBy
+  user: UserOrderBy
+  userId: OrderBy
+}
+
+input AccountUniqueFilter {
+  id: String
+}
+
+input AccountUpdateInput {
+  expiresAt: Int
+  idToken: String
+  provider: String
+  providerAccountId: String
+  scope: String
+  type: String
+  userId: String
+}
+
 input BooleanFilter {
   equals: Boolean
   not: BooleanFilter
@@ -36,7 +123,6 @@ input CommentFilter {
   createdAt: DateTimeFilter
   id: IntFilter
   message: StringFilter
-  referenceId: IntFilter
   updatedAt: DateTimeFilter
   user: UserFilter
   userId: StringFilter
@@ -177,6 +263,9 @@ input LogUpdateInput {
 }
 
 type Mutation {
+  """Create a new account."""
+  createAccount(create: AccountCreateInput): Account!
+
   """Create a new comment."""
   createComment(create: CommentCreateInput): Comment!
 
@@ -185,6 +274,9 @@ type Mutation {
 
   """Create a new user."""
   createUser(create: UserCreateInput): User!
+
+  """Delete the specified account."""
+  deleteAccount(id: String!): Account!
 
   """Delete the specified comment."""
   deleteComment(id: Int!): Comment!
@@ -197,6 +289,9 @@ type Mutation {
 
   """Delete the specified user."""
   deleteUser(id: String!): User!
+
+  """Update the specified account."""
+  updateAccount(id: String!, update: AccountUpdateInput): Account!
 
   """Update the specified comment."""
   updateComment(id: Int!, update: CommentUpdateInput): Comment!
@@ -222,6 +317,9 @@ input PagingInput {
 }
 
 type Query {
+  """Count the number of accounts."""
+  countAccounts(where: AccountFilter): Int!
+
   """Count the number of comments."""
   countComments(where: CommentFilter): Int!
 
@@ -231,6 +329,9 @@ type Query {
   """Count the number of user."""
   countUsers(where: UserFilter): Int!
 
+  """Group a list of accounts."""
+  groupAccounts(aggregate: AccountAggregate, by: [AccountFields!]!, where: AccountFilter): [JSON!]!
+
   """Group a list of comments."""
   groupComments(aggregate: CommentAggregate, by: [CommentFields!]!, where: CommentFilter): [JSON!]!
 
@@ -239,6 +340,12 @@ type Query {
 
   """Group a list of user."""
   groupUsers(aggregate: UserAggregate, by: [UserFields!]!, where: UserFilter): [JSON!]!
+
+  """Read a unique account."""
+  readAccount(where: AccountUniqueFilter): Account!
+
+  """Read a list of accounts."""
+  readAccounts(distinct: [AccountFields!], orderBy: [AccountOrderBy!], paging: PagingInput, where: AccountFilter): [Account!]!
 
   """Read a unique comment."""
   readComment(where: CommentUniqueFilter): Comment!
@@ -278,6 +385,7 @@ enum StringFilterMode {
 }
 
 type User {
+  accounts: [Account!]
   comments: [Comment!]
   createdAt: DateTime!
   email: String

@@ -1,7 +1,7 @@
-import { DateTimeFilter, IntFilter, StringFilter, builder } from "../builder";
-import { UserOrderBy, UserWhere } from "../users/input";
-
 import { Prisma } from "@prisma/client";
+
+import { builder, DateTimeFilter, IntFilter, StringFilter } from "../builder";
+import { UserOrderBy, UserWhere } from "../users/input";
 
 export const CommentFields = builder.enumType("CommentFields", {
   values: Object.values(Prisma.CommentScalarFieldEnum),
@@ -29,7 +29,6 @@ export const CommentWhere = builder.prismaWhere("Comment", {
     message: StringFilter,
     createdAt: DateTimeFilter,
     updatedAt: DateTimeFilter,
-    referenceId: IntFilter,
     userId: StringFilter,
     user: UserWhere,
   },

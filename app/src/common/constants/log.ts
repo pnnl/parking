@@ -1,55 +1,54 @@
-import Base from "./base";
-import { ILog } from "../types";
 import { enum_log } from "@prisma/client";
+
+import { ILog } from "../types";
+import Base from "./base";
 
 class Log extends Base<ILog> {
   constructor() {
-    super(
-      [
-        {
-          name: "banner",
-          label: "Banner",
-          enum: "Banner" as enum_log,
-          level: "0",
-        },
-        {
-          name: "trace",
-          label: "Trace",
-          enum: "Trace" as enum_log,
-          level: "10",
-        },
-        {
-          name: "debug",
-          label: "Debug",
-          enum: "Debug" as enum_log,
-          level: "20",
-        },
-        {
-          name: "info",
-          label: "Info",
-          enum: "Info" as enum_log,
-          level: "30",
-        },
-        {
-          name: "warn",
-          label: "Warn",
-          enum: "Warn" as enum_log,
-          level: "40",
-        },
-        {
-          name: "error",
-          label: "Error",
-          enum: "Error" as enum_log,
-          level: "50",
-        },
-        {
-          name: "fatal",
-          label: "Fatal",
-          enum: "Fatal" as enum_log,
-          level: "60",
-        },
-      ].map((v) => Object.freeze(v))
-    );
+    super([
+      {
+        name: "banner",
+        label: "Banner",
+        enum: "Banner" as enum_log,
+        level: "0",
+      },
+      {
+        name: "trace",
+        label: "Trace",
+        enum: "Trace" as enum_log,
+        level: "10",
+      },
+      {
+        name: "debug",
+        label: "Debug",
+        enum: "Debug" as enum_log,
+        level: "20",
+      },
+      {
+        name: "info",
+        label: "Info",
+        enum: "Info" as enum_log,
+        level: "30",
+      },
+      {
+        name: "warn",
+        label: "Warn",
+        enum: "Warn" as enum_log,
+        level: "40",
+      },
+      {
+        name: "error",
+        label: "Error",
+        enum: "Error" as enum_log,
+        level: "50",
+      },
+      {
+        name: "fatal",
+        label: "Fatal",
+        enum: "Fatal" as enum_log,
+        level: "60",
+      },
+    ]);
   }
 
   // static references to objects

@@ -1,5 +1,5 @@
+import { RoleType } from "../";
 import { RoleEnum } from "../types";
-import { RoleType } from "..";
 
 describe("constants.RoleType", () => {
   describe("RoleType.matcher", () => {

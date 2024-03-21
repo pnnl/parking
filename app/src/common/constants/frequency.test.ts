@@ -1,4 +1,4 @@
-import { FrequencyType } from "..";
+import { FrequencyType } from "../";
 
 describe("constants.FrequencyType", () => {
   describe("FrequencyType.parse()", () => {

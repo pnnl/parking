@@ -1,63 +1,38 @@
-import { SimpleIntervalJob, Task, ToadScheduler } from "toad-scheduler";
-import { Worker, isMainThread } from "node:worker_threads";
-import { isEmpty, isUndefined, merge, toLower } from "lodash";
-
+import { isEmpty, isEqual, isUndefined, merge, toLower } from "lodash";
 import cron from "node-cron";
-import fs from "fs";
+import { isMainThread, Worker } from "node:worker_threads";
+import { SimpleIntervalJob, Task, ToadScheduler } from "toad-scheduler";
+
 import { logger } from "@/logging";
-import { parseBoolean } from "@/utils/util";
-import path from "path";
+import { ServiceOptions, ServiceState } from "./types";
 
-const useWorkerThreads = parseBoolean(process.env.USE_WORKER_THREADS);
-
-const createPath = (value: string) => {
-  const dir = path.resolve(process.cwd(), value);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-};
-
-const getFiles = (root: string, dir: string, remove = false): Array<File> => {
-  const dirents = fs.readdirSync(dir, { withFileTypes: true });
-  const files = dirents.map((dirent) => {
-    const fullpath = path.join(dir, dirent.name);
-    if (dirent.isDirectory()) {
-      const ret = getFiles(root, fullpath, remove);
-      if (remove && isEmpty(ret) && fullpath !== root) {
-        fs.rmdir(fullpath, (error) => {
-          if (error && !error.message.startsWith("ENOTEMPTY")) {
-            logger.warn(error);
-          }
-        });
-      }
-      return ret;
-    } else if (dirent.isFile()) {
-      const stat = fs.statSync(fullpath);
-      return {
-        path: path.join(root, path.relative(root, dir)),
-        filename: dirent.name,
-        birthtime: new Date(stat.mtime),
-      };
-    }
-  });
-  return files.flat().filter((file) => !isUndefined(file)) as Array<File>;
-};
-
-const schedule = (worker: () => void, { schedule, service, leading, type }: ServiceOptions) => {
+const schedule = (worker: () => Promise<void>, { schedule, service, leading, type }: ServiceOptions) => {
   const instance = process.env.CLUSTER_TYPE ?? "";
-  if (
-    !isEmpty(instance) &&
-    !instance
-      .split(/[, |-]+/)
-      .map(toLower)
-      .includes(toLower(service))
-  ) {
+  const types = instance.split(/[, |-]+/).map(toLower);
+  const runAll = isEmpty(instance) || isEqual(types, ["services"]);
+  const runService = types.includes(toLower(service));
+  if (!(runAll || runService)) {
     return;
   }
+  const wrapper = (() => {
+    let running = false;
+    return async () => {
+      if (!running) {
+        running = true;
+        try {
+          await worker();
+        } catch (error) {
+          logger.error(error);
+        } finally {
+          running = false;
+        }
+      }
+    };
+  })();
   const suffix = isEmpty(instance) ? `${type ? type + " " : ""}${service}.` : `${service} for instance ${instance}.`;
   if (isUndefined(schedule) || isEmpty(schedule)) {
     if (leading) {
-      setTimeout(worker, 1);
+      setTimeout(wrapper, 1);
       logger.info(`Configured initial service ${suffix}.`);
     }
     return;
@@ -66,20 +41,22 @@ const schedule = (worker: () => void, { schedule, service, leading, type }: Serv
   const [, milliseconds] = pattern.exec(schedule) ?? [];
   if (milliseconds) {
     const scheduler = new ToadScheduler();
-    const task = new Task(`${service} Task`, worker);
+    const task = new Task(`${service} Task`, wrapper);
     const job = new SimpleIntervalJob({ milliseconds: parseInt(milliseconds), runImmediately: leading }, task);
     scheduler.addSimpleIntervalJob(job);
     logger.info(`Configured interval service ${suffix}.`);
   } else {
     if (leading) {
-      setTimeout(worker, 1);
+      setTimeout(wrapper, 1);
     }
-    cron.schedule(schedule, worker);
+    cron.schedule(schedule, wrapper);
     logger.info(`Configured scheduled service ${suffix}.`);
   }
 };
 
 const startService = (filename: string | URL, options?: WorkerOptions): Promise<void> | undefined => {
+  const useWorkerThreads = false;
+  // workers currently do not work in the nextjs runtime
   if (useWorkerThreads && process.env.NODE_ENV === "production" && isMainThread) {
     const name = options?.name ? `${options.name} ` : "";
     logger.info(`Starting ${name}in a worker thread.`);
@@ -104,7 +81,7 @@ function buildOptions<T extends {}>(options: ServiceOptions, state?: T): Readonl
       ...(process.env.PROXY_PROTOCOL && { protocol: process.env.PROXY_PROTOCOL }),
     };
   }
-  return merge(options, { state: state ?? {} });
+  return state ? merge(options, { state: state }) : options;
 }
 
-export { createPath, getFiles, schedule, startService, buildOptions };
+export { schedule, startService, buildOptions };

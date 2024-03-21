@@ -5,7 +5,7 @@
  * @param a normalized value
  * @returns value between min and max for a
  */
-export const lerp = (min: number, max: number, a: number) => min * (1 - a) + max * a;
+export const lerp = (min: number, max: number, a: number): number => min * (1 - a) + max * a;
 
 /**
  * Clamp
@@ -14,7 +14,7 @@ export const lerp = (min: number, max: number, a: number) => min * (1 - a) + max
  * @param max
  * @returns value clamped between min and max
  */
-export const clamp = (a: number, min = 0, max = 1) => Math.min(max, Math.max(min, a));
+export const clamp = (a: number, min = 0, max = 1): number => Math.min(max, Math.max(min, a));
 
 /**
  * Inverse Linear Interpolation
@@ -23,7 +23,7 @@ export const clamp = (a: number, min = 0, max = 1) => Math.min(max, Math.max(min
  * @param a value between min and max
  * @returns normalized value between x and y for a
  */
-export const invlerp = (min: number, max: number, a: number) => clamp((a - min) / (max - min));
+export const invlerp = (min: number, max: number, a: number): number => clamp((a - min) / (max - min));
 
 /**
  * Range
@@ -34,4 +34,5 @@ export const invlerp = (min: number, max: number, a: number) => clamp((a - min) 
  * @param a vaue between a range
  * @returns value between result range
  */
-export const range = (aMin: number, aMax: number, rMin: number, rMax: number, a: number) => (aMin === aMax ? rMax : lerp(rMin, rMax, invlerp(aMin, aMax, a)));
+export const range = (aMin: number, aMax: number, rMin: number, rMax: number, a: number): number =>
+  aMin === aMax ? rMax : lerp(rMin, rMax, invlerp(aMin, aMax, a));

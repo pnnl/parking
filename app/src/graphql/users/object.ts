@@ -15,5 +15,6 @@ export const UserObject = builder.prismaObject("User", {
     updatedAt: t.expose("updatedAt", { type: "DateTime", authScopes: { user: true } }),
     // indirect relations
     comments: t.relation("comments", { authScopes: { user: true }, nullable: true }),
+    accounts: t.relation("accounts", { authScopes: { user: true }, nullable: true }),
   }),
 });
