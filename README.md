@@ -1,3 +1,8 @@
+> [!IMPORTANT]
+> This repository has been archived and is no longer maintained.
+> The code is provided for historical reference and may contain unpatched or unknown vulnerabilities.
+> It should not be used in production systems.
+
 # Dynamic Curb Allocation Application
 
 Dynamic Curb Allocation Application is a web-based application that alerts drivers in real time to available parking spaces near their destinations. Parking availability can be viewed on a map in real-time, using predictive modeling and sensor data supplied by external services. The app can be viewed with a web browser on a mobile device or PC.
